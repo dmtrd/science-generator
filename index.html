@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Science Question Generator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header no-print">
+  <h1>Science Question Generator</h1>
+  <p>KS3, GCSE and A level (AQA). Build a timed worksheet, a keyword starter or pull random exam questions.</p>
+</header>
+
+<main class="layout">
+
+  <!-- ============ WIZARD ============ -->
+  <section class="wizard no-print" id="wizard">
+
+    <div class="step" id="step-year">
+      <h2><span class="num">1</span> Year group</h2>
+      <div class="chips" id="year-chips"></div>
+    </div>
+
+    <div class="step" id="step-subject">
+      <h2><span class="num">2</span> Subject</h2>
+      <div class="chips" id="subject-chips"></div>
+    </div>
+
+    <div class="step" id="step-exam">
+      <h2><span class="num">3</span> Exam and level</h2>
+      <p class="level-label" id="level-label"></p>
+      <div class="chips" id="tier-chips"></div>
+    </div>
+
+    <div class="step" id="step-topic">
+      <h2><span class="num">4</span> Topic <small>(choose one or more)</small></h2>
+      <div class="topic-actions">
+        <button type="button" class="link" id="topics-all">Select all</button>
+        <button type="button" class="link" id="topics-none">Clear</button>
+      </div>
+      <div class="topic-list" id="topic-list"></div>
+    </div>
+
+    <div class="step" id="step-mode">
+      <h2><span class="num">5</span> What do you want to make?</h2>
+      <div class="chips" id="mode-chips">
+        <button type="button" class="chip" data-mode="worksheet">Timed worksheet</button>
+        <button type="button" class="chip" data-mode="starter">Keyword starter</button>
+        <button type="button" class="chip" data-mode="exam">Random exam questions</button>
+      </div>
+
+      <div class="mode-options" id="opt-worksheet" hidden>
+        <label>Time</label>
+        <div class="chips small" id="minute-chips">
+          <button type="button" class="chip" data-minutes="5">5 min</button>
+          <button type="button" class="chip selected" data-minutes="10">10 min</button>
+          <button type="button" class="chip" data-minutes="15">15 min</button>
+          <button type="button" class="chip" data-minutes="20">20 min</button>
+        </div>
+      </div>
+
+      <div class="mode-options" id="opt-exam" hidden>
+        <label>How many questions?</label>
+        <div class="chips small" id="count-chips">
+          <button type="button" class="chip" data-count="1">1</button>
+          <button type="button" class="chip" data-count="2">2</button>
+          <button type="button" class="chip selected" data-count="3">3</button>
+          <button type="button" class="chip" data-count="4">4</button>
+          <button type="button" class="chip" data-count="5">5</button>
+        </div>
+      </div>
+
+      <div class="mode-options" id="opt-starter" hidden>
+        <label>Starter activities</label>
+        <div class="checks">
+          <label><input type="checkbox" id="st-match" checked> Match key words to definitions</label>
+          <label><input type="checkbox" id="st-gaps" checked> Fill in the gaps</label>
+          <label><input type="checkbox" id="st-quick" checked> Three quick questions</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="generate-row">
+      <button type="button" class="primary" id="generate" disabled>Generate</button>
+      <span class="hint" id="pool-info"></span>
+    </div>
+  </section>
+
+  <!-- ============ OUTPUT ============ -->
+  <section class="output" id="output-section" hidden>
+    <div class="toolbar no-print">
+      <button type="button" id="btn-shuffle">Shuffle again</button>
+      <button type="button" id="btn-answers">Show answers</button>
+      <button type="button" id="btn-print">Print / Save as PDF</button>
+      <button type="button" id="btn-word">Download Word</button>
+      <span class="hint">Tip: in the print dialog choose "Save as PDF".</span>
+    </div>
+    <div class="paper" id="paper"></div>
+  </section>
+
+</main>
+
+<footer class="no-print">
+  <p>Question bank stored in <code>data/</code>. See <code>README.md</code> for how to add questions, images and topics.</p>
+</footer>
+
+<!-- Word export library (real .docx files, loaded from a CDN when online) -->
+<script src="https://cdn.jsdelivr.net/npm/docx@9.0.2/build/index.umd.js"></script>
+
+<!-- DATA: structure, keywords, questions.
+     To add a new data file, add a <script> line for it here. -->
+<script src="data/structure.js"></script>
+<script src="data/keywords/ks3.js"></script>
+<script src="data/keywords/gcse-biology.js"></script>
+
+<!-- Past papers extracted by tools/build_all.py. Do not edit this block by hand. -->
+<!-- PAPERS:START -->
+<script src="data/questions/aqa-8461-1h-jun18.js"></script>
+<script src="data/questions/aqa-8461-1h-jun22.js"></script>
+<script src="data/questions/aqa-8461-1h-jun23.js"></script>
+<script src="data/questions/aqa-8461-1h-jun24.js"></script>
+<script src="data/questions/aqa-8461-1h-jun25.js"></script>
+<script src="data/questions/aqa-8461-1h-nov20.js"></script>
+<script src="data/questions/aqa-8461-1h-nov21.js"></script>
+<script src="data/questions/aqa-8461-2h-jun22.js"></script>
+<script src="data/questions/aqa-8461-2h-jun23.js"></script>
+<script src="data/questions/aqa-8461-2h-jun24.js"></script>
+<script src="data/questions/aqa-8461-2h-jun25.js"></script>
+<script src="data/questions/aqa-8461-2h-nov20.js"></script>
+<script src="data/questions/aqa-8461-2h-nov21.js"></script>
+<!-- PAPERS:END -->
+
+<!-- APP -->
+<script src="app.js"></script>
+</body>
+</html>
