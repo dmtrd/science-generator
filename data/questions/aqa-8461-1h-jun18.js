@@ -1,499 +1,434 @@
 // AUTO-GENERATED from AQA GCSE Biology Paper 1H June 2018
 // Source PDFs: AQA question paper and mark scheme.
-// Regenerate with: python3 tools/extract.py (see tools/README)
-// Worth spot-checking a few by eye; the parser is good but not perfect.
+// Regenerate with: PYTHONPATH=tools python3 tools/build_all.py <folder>
+// Hand edits here are lost on the next run; put corrections in a file of your own.
 
 window.QUESTIONS = window.QUESTIONS || [];
 window.QUESTIONS.push(
   {
-    "id": "aqa-8461-1h-jun18-01-1",
+    "id": "aqa-8461-1h-jun18-01",
     "level": "gcse",
     "subject": "biology",
     "topic": "gcse-bio-3",
     "tier": "H",
-    "marks": 1,
-    "type": "short",
-    "text": "• Do all rough work in this book. Cross through any work you do not want to be marked. • In all calculations, show clearly how you work out your answer. Information • There are 100 marks available on this paper. • The marks for questions are shown in brackets. • You are expected to use a calculator where appropriate. • You are reminded of the need for good English and clear presentation in your answers. Please write clearly in block capitals. Centre number Candidate number Surname Forename(s) Candidate signature GCSE BIOLOGY Higher Tier Paper 1H H There are no questions printed on this page Eating food containing Salmonella bacteria can cause illness. Two symptoms of infection by Salmonella are vomiting and diarrhoea. What causes these symptoms?",
-    "answer": "(secreted by /",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q01.1"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-01-2",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-3",
-    "tier": "H",
-    "marks": 2,
-    "type": "short",
-    "text": "Eating food containing Salmonella bacteria can cause illness. Give two ways a person with a mild infection of Salmonella can help prevent the spread of the bacteria to other people.",
-    "answer": "after using toilet ignore sick ignore sneezing before / handling food food (whilst yourself allow examples could be clothes / surfaces utensils / / towels\n(examiner note: ‘wash hands’ unqualified reference to coughing / of how isolation achieved)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q01.2"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-01-3",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-3",
-    "tier": "H",
-    "marks": 1,
-    "type": "short",
-    "text": "Eating food containing Salmonella bacteria can cause illness. In very serious infections of Salmonella, a doctor can prescribe drugs to kill the bacteria. What type of drug can the doctor prescribe to kill the bacteria?",
-    "answer": "allow named antibiotics\n(examiner note: examples of)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q01.3"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-01-4",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-3",
-    "tier": "H",
-    "marks": 2,
-    "type": "short",
-    "text": "Eating food containing Salmonella bacteria can cause illness. A person with AIDS may take longer than a healthy person to recover from a Salmonella infection. Explain why.",
-    "answer": "is damaged / allow immunocompromised or immune system allow lack properly cells cells cannot kill allow no (as bacteria phagocytosis killed or counter\n(examiner note: of / no white blood / fewer antibodies so not killed or less so bacteria not no / fewer antitoxins to toxins)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q01.4"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-01-5",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-3",
-    "tier": "H",
-    "marks": 1,
-    "type": "short",
-    "text": "Eating food containing Salmonella bacteria can cause illness. Salmonella bacteria can be transmitted from chickens to humans. Chickens can be vaccinated to prevent the transmission of Salmonella bacteria to humans. Suggest one other way farmers could prevent the transmission of Salmonella from chickens to humans.",
-    "answer": "antibiotics allow (give monoclonal infected chickens / allow don’t eggs ignore chickens allow keep / indoors ignore the infected ignore / disinfection\n(examiner note: chickens) antibodies sell the chickens / don’t sell chickens / eggs the chickens indoors keep chickens indoors vaccination / chlorination)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q01.5"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-01-6",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-1",
-    "tier": "H",
-    "marks": 1,
-    "type": "short",
-    "text": "Eating food containing Salmonella bacteria can cause illness. A restaurant owner employed a scientist to test the effectiveness of two kitchen cleaning liquids. The scientist took samples from two work surfaces: • before the surfaces had been cleaned with the cleaning liquids • after the surfaces had been cleaned with the cleaning liquids. The samples were then analysed for the number of bacteria they contained. The results are shown in Figure 1. Figure 1 Which cleaning liquid is the more effective? Give a reason for your answer.",
-    "answer": "B in number of ignore cleaning) in both locations allow neither experimental\n(examiner note: few bacteria in both / both and idea of error)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q01.6",
-    "image": "data/images/aqa-8461-1h-jun18-figure1.png"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-01-7",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-1",
-    "tier": "H",
-    "marks": 1,
-    "type": "calculation",
-    "text": "Eating food containing Salmonella bacteria can cause illness. Cleaning Liquid Reason The scientist investigated the effect of cleaning liquid A and cleaning liquid B on Salmonella bacteria grown in a laboratory. Figure 2 shows the way the investigation was set up. Figure 2 The Petri dish was placed in an incubator at 25 °C for 48 hours. After 48 hours, the scientist calculated the area around each paper disc where no bacteria were growing. The results are shown in Table 1. Table 1 What measurement would the scientist need to take to calculate the area where no bacteria were growing?",
-    "answer": "allow diameter with no bacteria no bacteria ignore allow idea onto graph the squares bacteria\n(examiner note: (of the area with growing) πr2 unqualified of placing agar plate paper and counting not covered with)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q01.7",
-    "image": "data/images/aqa-8461-1h-jun18-figure2.png",
-    "images": [
-      "data/images/aqa-8461-1h-jun18-figure2.png",
-      "data/images/aqa-8461-1h-jun18-table1.png"
-    ]
-  },
-  {
-    "id": "aqa-8461-1h-jun18-01-8",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-1",
-    "tier": "H",
-    "marks": 1,
-    "type": "short",
-    "text": "Eating food containing Salmonella bacteria can cause illness. Give one change to the investigation that would allow the scientist to check if the results are repeatable.",
-    "answer": "look to see if results ignore allow repeat results allow repeat anomalies ignore anomalies ignore unqualified\n(examiner note: repeat unqualified and look to see if are different and see if there are repeat and identify repeat and compare)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q01.8"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-01-9",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-1",
-    "tier": "H",
-    "marks": 1,
-    "type": "short",
-    "text": "Eating food containing Salmonella bacteria can cause illness. The scientist showed the results to the restaurant owner. Both cleaning liquids cost the same per dm3. Suggest one other factor the restaurant owner should consider when choosing which cleaning liquid to use.",
-    "answer": "ignore / side / health effects allow reference other types of allow not / pathogens of bacteria ignore with other use factor of each ignore (vs. cost) ignore is effective for lasts for allow reference cleaning ignore unqualified ignore flammability\n(examiner note: harmful / dangerous to allergies tested on other types germs concentration unqualified how long the cleaner to odour of liquid reference to cost environmental effects /)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q01.9"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-02-1",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-4",
-    "tier": "H",
-    "marks": 1,
-    "type": "short",
-    "text": "Metabolism is the sum of all the chemical reactions in the cells of the body. One metabolic reaction is the formation of lipids. Give one other metabolic reaction in cells.",
-    "answer": "allow other metabolic ignore of proteins / breakdown of of (excess) or formation of urea or formation ignore / starch (in plants) carbohydrates\n(examiner note: correct reference to reactions in cells reference to digestion formation of)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q02.1"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-02-2",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-4",
-    "tier": "H",
-    "marks": 2,
-    "type": "mcq",
-    "text": "Metabolism is the sum of all the chemical reactions in the cells of the body. One metabolic reaction is the formation of lipids. Table 2 shows the mean metabolic rate of humans of different ages. Table 2 What two conclusions can be made from the data in Table 2?",
-    "answer": "each additional mark a higher metabolic after five rate of faster than 25 years of age\n(examiner note: tick negates a)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q02.2",
-    "options": [
-      "es.",
-      "As age increases, mean metabolic rate of males and",
-      "females increases.",
-      "Males have a higher metabolic rate than females after",
-      "five years of age.",
-      "The mean metabolic rate of females decreases faster than males"
+    "marks": 11,
+    "text": "Eating food containing Salmonella bacteria can cause illness.",
+    "parts": [
+      {
+        "label": "01.1",
+        "text": "• Do all rough work in this book. Cross through any work you do not want to be marked. • In all calculations, show clearly how you work out your answer. Information • There are 100 marks available on this paper. • The marks for questions are shown in brackets. • You are expected to use a calculator where appropriate. • You are reminded of the need for good English and clear presentation in your answers. Please write clearly in block capitals. Centre number Candidate number Surname Forename(s) Candidate signature GCSE BIOLOGY Higher Tier Paper 1H H There are no questions printed on this page Eating food containing Salmonella bacteria can cause illness. Two symptoms of infection by Salmonella are vomiting and diarrhoea. What causes these symptoms?",
+        "marks": 1,
+        "type": "short",
+        "answer": "/ poisons (secreted by / / in bacteria)",
+        "standalone": true
+      },
+      {
+        "label": "01.2",
+        "text": "Give two ways a person with a mild infection of Salmonella can help prevent the spread of the bacteria to other people.",
+        "marks": 2,
+        "type": "short",
+        "answer": "two from: wash hands after using toilet being sick\nor wash hands before preparing / handling food\nor do not prepare food (whilst infected) isolate yourself disinfect clothes / surfaces do not share utensils / cutlery / towels",
+        "guidance": "Ignore ‘wash hands’ unqualified\nIgnore reference to coughing / sneezing\nAllow examples of how isolation could be achieved",
+        "standalone": true
+      },
+      {
+        "label": "01.3",
+        "text": "In very serious infections of Salmonella, a doctor can prescribe drugs to kill the bacteria. What type of drug can the doctor prescribe to kill the bacteria?",
+        "marks": 1,
+        "type": "short",
+        "answer": "antibiotics",
+        "guidance": "Allow named examples of antibiotics",
+        "standalone": true
+      },
+      {
+        "label": "01.4",
+        "text": "A person with AIDS may take longer than a healthy person to recover from a Salmonella infection. Explain why.",
+        "marks": 2,
+        "type": "short",
+        "answer": "system is damaged / weakened\nor immune system function properly blood cells cannot kill / Salmonella (as effectively)",
+        "guidance": "Allow immunocompromised\nAllow lack of / no white blood cells\nAllow no / fewer antibodies so bacteria not killed less or phagocytosis so bacteria not killed or no / fewer antitoxins to counter toxins",
+        "standalone": true
+      },
+      {
+        "label": "01.5",
+        "text": "Salmonella bacteria can be transmitted from chickens to humans. Chickens can be vaccinated to prevent the transmission of Salmonella bacteria to humans. Suggest one other way farmers could prevent the transmission of Salmonella from chickens to humans.",
+        "marks": 1,
+        "type": "short",
+        "answer": "one from: (give chickens) antibiotics don’t sell infected chickens eggs keep infected chickens isolated / indoors slaughter the infected chickens",
+        "guidance": "Allow (give chickens) monoclonal antibodies /\nAllow don’t sell the chickens / eggs\nIgnore don’t sell chickens / eggs\nAllow keep the chickens indoors\nIgnore keep chickens indoors\nIgnore vaccination / chlorination / disinfection",
+        "standalone": true
+      },
+      {
+        "label": "01.6",
+        "text": "A restaurant owner employed a scientist to test the effectiveness of two kitchen cleaning liquids. The scientist took samples from two work surfaces: • before the surfaces had been cleaned with the cleaning liquids • after the surfaces had been cleaned with the cleaning liquids. The samples were then analysed for the number of bacteria they contained. The results are shown in Figure 1. Which cleaning liquid is the more effective? Give a reason for your answer.",
+        "marks": 1,
+        "type": "short",
+        "answer": "liquid) B reduction in number of (after cleaning) in both",
+        "guidance": "Ignore few bacteria in both locations\nAllow neither / both and idea of experimental error",
+        "images": [
+          "data/images/aqa-8461-1h-jun18-figure1.png"
+        ],
+        "standalone": true
+      },
+      {
+        "label": "01.7",
+        "text": "Cleaning Liquid Reason The scientist investigated the effect of cleaning liquid A and cleaning liquid B on Salmonella bacteria grown in a laboratory. Figure 2 shows the way the investigation was set up. The Petri dish was placed in an incubator at 25 °C for 48 hours. After 48 hours, the scientist calculated the area around each paper disc where no bacteria were growing. The results are shown in Table 1. What measurement would the scientist need to take to calculate the area where no bacteria were growing?",
+        "marks": 1,
+        "type": "calculation",
+        "answer": "(of area with no bacteria",
+        "guidance": "Allow diameter (of the area with no bacteria growing)\nIgnore πr2 unqualified\nAllow idea of placing agar plate onto graph paper and counting the squares not covered with bacteria",
+        "images": [
+          "data/images/aqa-8461-1h-jun18-figure2.png",
+          "data/images/aqa-8461-1h-jun18-table1.png"
+        ],
+        "standalone": true
+      },
+      {
+        "label": "01.8",
+        "text": "Give one change to the investigation that would allow the scientist to check if the results are repeatable.",
+        "marks": 1,
+        "type": "short",
+        "answer": "look to see if results and similar",
+        "guidance": "Ignore repeat unqualified\nAllow repeat and look to see if results are different\nAllow repeat and see if there anomalies\nIgnore repeat and identify anomalies\nIgnore repeat and compare unqualified",
+        "standalone": true
+      },
+      {
+        "label": "01.9",
+        "text": "The scientist showed the results to the restaurant owner. Both cleaning liquids cost the same per dm3. Suggest one other factor the restaurant owner should consider when choosing which cleaning liquid to use.",
+        "marks": 1,
+        "type": "short",
+        "answer": "one from: toxicity / side / health effects effect on other types of bacteria / pathogens interaction with other cleaners ease of use dilution factor of each cleaner (vs. cost) time cleaner is effective for",
+        "guidance": "Ignore harmful / dangerous\nAllow reference to allergies\nAllow not tested on other types of bacteria\nIgnore germs\nIgnore concentration unqualified\nIgnore how long the cleaner lasts for\nAllow reference to odour of cleaning liquid\nIgnore reference to cost unqualified\nIgnore environmental effects / flammability",
+        "standalone": true
+      }
     ],
-    "image": "data/images/aqa-8461-1h-jun18-table2.png"
+    "source": "AQA GCSE Biology Paper 1H June 2018 Q1"
   },
   {
-    "id": "aqa-8461-1h-jun18-02-3",
+    "id": "aqa-8461-1h-jun18-02",
     "level": "gcse",
     "subject": "biology",
     "topic": "gcse-bio-4",
     "tier": "H",
-    "marks": 3,
-    "type": "calculation",
-    "text": "Metabolism is the sum of all the chemical reactions in the cells of the body. One metabolic reaction is the formation of lipids. up to 25 years of age. The mean metabolic rate of males and females decreases more quickly after the age of 35. There is no relationship between age and mean metabolic rate. Calculate the percentage decrease in the mean metabolic rate of males between 5 years and 45 years of age. Use the equation: percentage decrease= decrease in metabolic rate original metabolic rate × 100 Give your answer to 3 significant figures.",
-    "answer": "an answer marks allow correct at least\n(examiner note: of 32.1 scores 3 rounding of this to 4 significant figures)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q02.3"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-02-4",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-4",
-    "tier": "H",
-    "marks": 2,
-    "type": "short",
-    "text": "Metabolism is the sum of all the chemical reactions in the cells of the body. One metabolic reaction is the formation of lipids. Percentage decrease = Regular exercise can increase metabolic rate. Two people did five minutes of gentle exercise from rest. Table 3 shows the effect of the exercise on their heart rates. Table 3 Describe two differences in the response of person R and person S to the exercise. Use information from Table 3.",
-    "answer": "allow converse R heart rate rose / more slowly than S R heart rate off whereas (person) to increase R heart rate rose allow correct / after 5 minutes eg R increased than S bpm / 69% ignore\n(examiner note: use of figures (overall) by 39 65% and S by 54 bpm / lack of units)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q02.4",
-    "image": "data/images/aqa-8461-1h-jun18-table3.png"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-02-5",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-4",
-    "tier": "H",
-    "marks": 4,
-    "type": "short",
-    "text": "Metabolism is the sum of all the chemical reactions in the cells of the body. One metabolic reaction is the formation of lipids. Complete the line graph in Figure 3 for person S. You should: • add the scale to the x axis • label the x axis.",
-    "answer": "and axis labelled allow min(s) do not the zero x-axis correctly (to allow 4 mark to point or line of best fit\n(examiner note: accept ‘m’ is not required on the or 5 correct plots for 1)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q02.5",
-    "image": "data/images/aqa-8461-1h-jun18-figure3.png"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-02-6",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-4",
-    "tier": "H",
-    "marks": 2,
-    "type": "calculation",
-    "text": "Metabolism is the sum of all the chemical reactions in the cells of the body. One metabolic reaction is the formation of lipids. Figure 3 After five minutes of exercise, the heart rate of person S was 132 beats per minute. When person S rested, his heart rate decreased steadily at a rate of 12 beats every minute. Calculate how much time it would take the heart rate of person S to return to its resting rate.",
-    "answer": "an answer 2 marks 54 allow 12 allow sequential 12 four / 4½ minutes / 4 do not seconds / 4:30 or 4 minutes\n(examiner note: of 4.5 minutes scores deductions of or five times accept 4:50 50 seconds)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q02.6",
-    "image": "data/images/aqa-8461-1h-jun18-figure3.png"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-02-7",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-4",
-    "tier": "H",
-    "marks": 6,
-    "type": "extended",
-    "text": "Metabolism is the sum of all the chemical reactions in the cells of the body. One metabolic reaction is the formation of lipids. Time = minutes A student made the following hypothesis about the heart rate of smokers and non-smokers during exercise. “During exercise, the heart rate of smokers increases more than the heart rate of non-smokers.” Design an investigation that would allow you to test this hypothesis.",
-    "answer": "method would lead to the production key steps are identified and method would not necessarily steps are identified, but the method would not lead to a are identified, but links are content content of people - non-smokers and least five people in each group person to do (named) exercise variables: number of people in each group gender level of activity / exercise age issues / illnesses type of exercise time for exercise heart rate for each person before increase in heart rate for each results for each group students should refer to at least out exercise with control an increase in heart rate students should refer to ‘groups’\n(examiner note: of a valid logically sequenced. lead to a valid method is not fully valid outcome. Some not made clear. smokers or large groups or large groups and after exercise person after exercise 5 smokers and 5 non- variables and a means of smokers and non-)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q02.7"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-03-1",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-2",
-    "tier": "H",
-    "marks": 2,
-    "type": "short",
-    "text": "The circulatory system is composed of the blood, blood vessels and the heart. Urea is transported in the blood plasma. Name two other substances transported in the blood plasma.",
-    "answer": "allow proteins dioxide antibodies ions / fatty ignore nutrients\n(examiner note: / hormones / / vitamins / minerals / acids / glycerol sugar / enzymes / / waste)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q03.1"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-03-2",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-2",
-    "tier": "H",
-    "marks": 3,
-    "type": "short",
-    "text": "The circulatory system is composed of the blood, blood vessels and the heart. Some athletes train at high altitude. Training at high altitude increases the number of red blood cells per cm3 of blood. Explain why having more red blood cells per cm3 of blood is an advantage to an athlete.",
-    "answer": "max 2 given more oxygen can be respiration allow less / lactic fatigue released for ie addition do not\n(examiner note: marks if ‘more’ is not anaerobic respiration acid / oxygen debt / in muscle (cells) of 'debt accept energy produced)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q03.2"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-03-3",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-2",
-    "tier": "H",
-    "marks": 2,
-    "type": "mcq",
-    "text": "The circulatory system is composed of the blood, blood vessels and the heart. Which two blood vessels carry deoxygenated blood?",
-    "answer": "artery",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q03.3",
-    "options": [
-      "es.",
-      "Aorta",
-      "Coronary artery",
-      "Pulmonary artery",
-      "Pulmonary vein",
-      "Vena cava"
-    ]
-  },
-  {
-    "id": "aqa-8461-1h-jun18-03-4",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-2",
-    "tier": "H",
-    "marks": 1,
-    "type": "mcq",
-    "text": "The circulatory system is composed of the blood, blood vessels and the heart. Figure 4 shows the three types of blood vessel. Figure 4 Which type of blood vessel carries blood into the right atrium?",
-    "answer": "",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q03.4",
-    "options": [
-      "A",
-      "B",
-      "C"
+    "marks": 20,
+    "text": "Metabolism is the sum of all the chemical reactions in the cells of the body. One metabolic reaction is the formation of lipids.",
+    "parts": [
+      {
+        "label": "02.1",
+        "text": "Give one other metabolic reaction in cells.",
+        "marks": 1,
+        "type": "short",
+        "answer": "one from: respiration formation of proteins formation / breakdown of glycogen breakdown of (excess) protein\nor formation of urea photosynthesis\nor formation glucose / starch (in plants)",
+        "guidance": "Allow other correct reference to metabolic reactions in cells\nIgnore reference to digestion\nIgnore formation of carbohydrates",
+        "standalone": true
+      },
+      {
+        "label": "02.2",
+        "text": "Table 2 shows the mean metabolic rate of humans of different ages. What two conclusions can be made from the data in Table 2?",
+        "marks": 2,
+        "type": "mcq",
+        "answer": "have a higher metabolic than females after five of age mean metabolic rate of decreases faster than up to 25 years of age",
+        "guidance": "Each additional tick negates a mark",
+        "options": [
+          "As age increases, mean metabolic rate of males and",
+          "females increases.",
+          "Males have a higher metabolic rate than females after",
+          "five years of age.",
+          "The mean metabolic rate of females decreases faster than males",
+          "up to 25 years of age."
+        ],
+        "images": [
+          "data/images/aqa-8461-1h-jun18-table2.png"
+        ],
+        "standalone": true
+      },
+      {
+        "label": "02.3",
+        "text": "The mean metabolic rate of males and females decreases more quickly after the age of 35. There is no relationship between age and mean metabolic rate. Calculate the percentage decrease in the mean metabolic rate of males between 5 years and 45 years of age. Use the equation: percentage decrease= decrease in metabolic rate original metabolic rate × 100 Give your answer to 3 significant figures.",
+        "marks": 3,
+        "type": "calculation",
+        "answer": "100 32.075472…",
+        "guidance": "An answer of 32.1 scores 3 marks\nAllow correct rounding of this to at least 4 significant figures",
+        "standalone": true
+      },
+      {
+        "label": "02.4",
+        "text": "Regular exercise can increase metabolic rate. Two people did five minutes of gentle exercise from rest. Table 3 shows the effect of the exercise on their heart rates. Describe two differences in the response of person R and person S to the exercise. Use information from Table 3.",
+        "marks": 2,
+        "type": "short",
+        "answer": "two from: (person) R heart rate rose / increased more slowly than (person) S (person) R heart rate levelled off whereas (person) continued to increase (person) R heart rate rose less (overall / after 5 minutes exercise) than S   [2 marks]",
+        "guidance": "Allow converse\nAllow correct use of figures eg R increased (overall) by 39 bpm / 65% and S by 54 bpm / 69%\nIgnore lack of units",
+        "images": [
+          "data/images/aqa-8461-1h-jun18-table3.png"
+        ],
+        "standalone": true
+      },
+      {
+        "label": "02.5",
+        "text": "Complete the line graph in Figure 3 for person S. You should: • add the scale to the x axis • label the x axis.",
+        "marks": 4,
+        "type": "short",
+        "answer": "scale and axis labelled points plotted correctly (to ± ½ square) joined point to point\nor curved line of best fit",
+        "guidance": "Allow min(s)\nDo not accept ‘m’ the zero is not required on the x-axis\nAllow 4 or 5 correct plots for 1 mark",
+        "images": [
+          "data/images/aqa-8461-1h-jun18-figure3.png"
+        ],
+        "standalone": false
+      },
+      {
+        "label": "02.6",
+        "text": "Figure 3 After five minutes of exercise, the heart rate of person S was 132 beats per minute. When person S rested, his heart rate decreased steadily at a rate of 12 beats every minute. Calculate how much time it would take the heart rate of person S to return to its resting rate.",
+        "marks": 2,
+        "type": "calculation",
+        "answer": "78 (minutes) / 4½ minutes / 4 30 seconds / 4:30",
+        "guidance": "An answer of 4.5 minutes scores 2 marks 54\nAllow 12\nAllow sequential deductions of 12 four or five times\nDo not accept 4:50 or 4 minutes 50 seconds",
+        "images": [
+          "data/images/aqa-8461-1h-jun18-figure3.png"
+        ],
+        "standalone": false
+      },
+      {
+        "label": "02.7",
+        "text": "A student made the following hypothesis about the heart rate of smokers and non-smokers during exercise. “During exercise, the heart rate of smokers increases more than the heart rate of non-smokers.” Design an investigation that would allow you to test this hypothesis.",
+        "marks": 6,
+        "type": "extended",
+        "answer": "method would lead to the production of a key steps are identified and logically method would not necessarily lead to a steps are identified, but the method is sequenced. method would not lead to a valid outcome. are identified, but links are not made clear. content content of people - non-smokers and smokers least five people in each group or large person to do (named) exercise variables: number of people in each group or large gender level of activity / exercise age health issues / illnesses type of exercise time for exercise heart rate for each person before and after increase in heart rate for each person after results for each group students should refer to at least 5 smokers carrying out exercise with control variables an increase in heart rate students should refer to ‘groups’ of smokers exercising",
+        "standalone": true
+      }
     ],
-    "image": "data/images/aqa-8461-1h-jun18-figure4.png"
+    "source": "AQA GCSE Biology Paper 1H June 2018 Q2"
   },
   {
-    "id": "aqa-8461-1h-jun18-03-5",
+    "id": "aqa-8461-1h-jun18-03",
     "level": "gcse",
     "subject": "biology",
     "topic": "gcse-bio-2",
     "tier": "H",
-    "marks": 3,
-    "type": "short",
-    "text": "The circulatory system is composed of the blood, blood vessels and the heart. Compare the structure of an artery with the structure of a vein.",
-    "answer": "have a thicker layer if neither 2 awarded, (tissue) or veins thinner layer of have (tissue) have or have a thicker layer arteries or tissue or veins for thinner layer of do have a narrower allow descriptions veins have a wider do not have valves allow only have valves\n(examiner note: marking points 1 or allow arteries a thick wall and veins a thin wall have a thicker wall veins have a thinner wall 1 mark not accept ‘cell wall’ of ‘lumen’ veins have valves)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q03.5"
+    "marks": 12,
+    "text": "The circulatory system is composed of the blood, blood vessels and the heart.",
+    "parts": [
+      {
+        "label": "03.1",
+        "text": "Urea is transported in the blood plasma. Name two other substances transported in the blood plasma.",
+        "marks": 2,
+        "type": "short",
+        "answer": "two from: carbon dioxide water glucose amino acids lactic acid   [2 marks]",
+        "guidance": "Allow proteins / hormones / antibodies / vitamins / minerals ions / fatty acids / glycerol\nIgnore sugar / enzymes / nutrients / waste",
+        "standalone": true
+      },
+      {
+        "label": "03.2",
+        "text": "Some athletes train at high altitude. Training at high altitude increases the number of red blood cells per cm3 of blood. Explain why having more red blood cells per cm3 of blood is an advantage to an athlete.",
+        "marks": 3,
+        "type": "short",
+        "answer": "haemoglobin (therefore) more oxygen can be / transported more (aerobic) respiration muscle (cells) energy released for (cells)",
+        "guidance": "Max 2 marks if ‘more’ is not given\nAllow less anaerobic respiration / lactic acid / oxygen debt / fatigue in muscle (cells) ie addition of 'debt\nDo not accept energy produced",
+        "standalone": true
+      },
+      {
+        "label": "03.3",
+        "text": "Which two blood vessels carry deoxygenated blood?",
+        "marks": 2,
+        "type": "mcq",
+        "answer": "pulmonary artery cava",
+        "options": [
+          "Aorta",
+          "Coronary artery",
+          "Pulmonary artery",
+          "Pulmonary vein",
+          "Vena cava"
+        ],
+        "standalone": true
+      },
+      {
+        "label": "03.5",
+        "text": "Compare the structure of an artery with the structure of a vein.",
+        "marks": 3,
+        "type": "short",
+        "answer": "three from: arteries have a thicker layer muscle (tissue)\nor veins have a thinner layer of muscle (tissue) arteries have a thicker layer elastic tissue\nor veins have a thinner layer of elastic tissue arteries have a narrower lumen\nor veins have a wider lumen arteries do not have valves and veins have valves",
+        "guidance": "If neither marking points 1 2 awarded,\nAllow arteries have a thick wall and veins have a thin wall or arteries have a thicker wall or veins have a thinner wall for 1 mark\nDo not accept ‘cell wall’\nAllow descriptions of ‘lumen’\nAllow only veins have valves",
+        "standalone": true
+      },
+      {
+        "label": "03.6",
+        "text": "Heart rate is controlled by a group of cells. This group of cells act as a pacemaker. Figure 5 shows a section through the heart. Draw an X on Figure 5 to show the position of the pacemaker.",
+        "marks": 1,
+        "type": "short",
+        "answer": "an X drawn anywhere in shaded area below:",
+        "guidance": "If a large X is drawn,\nAward the mark if the intersection touches the grey area if a label line is used,\nAward marks if the end of the label line touches the grey area\nAllow label ‘pacemaker’\nIgnore label ‘right atrium’",
+        "images": [
+          "data/images/aqa-8461-1h-jun18-figure5.png"
+        ],
+        "standalone": false
+      },
+      {
+        "label": "03.7",
+        "text": "Figure 5 A patient may be fitted with an artificial pacemaker. What condition may be treated using an artificial pacemaker?",
+        "marks": 1,
+        "type": "short",
+        "answer": "irregular heart beat",
+        "guidance": "Allow arrhythmia\nAllow fibrillation\nIgnore heart failure\nDo not accept cardiovascular disease / heart murmur",
+        "images": [
+          "data/images/aqa-8461-1h-jun18-figure5.png"
+        ],
+        "standalone": false
+      }
+    ],
+    "source": "AQA GCSE Biology Paper 1H June 2018 Q3"
   },
   {
-    "id": "aqa-8461-1h-jun18-03-6",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-2",
-    "tier": "H",
-    "marks": 1,
-    "type": "short",
-    "text": "The circulatory system is composed of the blood, blood vessels and the heart. Heart rate is controlled by a group of cells. This group of cells act as a pacemaker. Figure 5 shows a section through the heart. Draw an X on Figure 5 to show the position of the pacemaker.",
-    "answer": "drawn anywhere in if a large area below: mark if the grey if a label marks touches allow label ignore\n(examiner note: X is drawn, award the the intersection touches area line is used, award if the end of the label line the grey area ‘pacemaker’ label ‘right atrium’)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q03.6",
-    "image": "data/images/aqa-8461-1h-jun18-figure5.png"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-03-7",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-2",
-    "tier": "H",
-    "marks": 1,
-    "type": "short",
-    "text": "The circulatory system is composed of the blood, blood vessels and the heart. Figure 5 A patient may be fitted with an artificial pacemaker. What condition may be treated using an artificial pacemaker?",
-    "answer": "heart beat allow arrhythmia allow fibrillation ignore do not disease\n(examiner note: heart failure accept cardiovascular / heart murmur)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q03.7",
-    "image": "data/images/aqa-8461-1h-jun18-figure5.png"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-04-1",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-1",
-    "tier": "H",
-    "marks": 1,
-    "type": "short",
-    "text": "A student carried out an investigation using chicken eggs. This is the method used. 1. Place 5 eggs in acid for 24 hours to dissolve the egg shell. 2. Measure and record the mass of each egg. 3. Place each egg into a separate beaker containing 200 cm3 of distilled water. 4. After 20 minutes, remove the eggs from the beakers and dry them gently with a paper towel. 5. Measure and record the mass of each egg. Table 4 shows the results. Table 4 Another student suggested that the result for egg 4 was anomalous. Do you agree with the student? Give a reason for your answer.",
-    "answer": "the mass change much lower than allow because gained than the allow it 1.5 g and gained required)\n(examiner note: it / egg 4 has (over) 50% less mass others / egg 4 has gained the others have all more than 3 g (unit)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q04.1",
-    "image": "data/images/aqa-8461-1h-jun18-table4.png"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-04-2",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-1",
-    "tier": "H",
-    "marks": 2,
-    "type": "calculation",
-    "text": "A student carried out an investigation using chicken eggs. This is the method used. 1. Place 5 eggs in acid for 24 hours to dissolve the egg shell. 2. Measure and record the mass of each egg. 3. Place each egg into a separate beaker containing 200 cm3 of distilled water. 4. After 20 minutes, remove the eggs from the beakers and dry them gently with a paper towel. 5. Measure and record the mass of each egg. Table 4 shows the results. Table 4 Calculate the percentage change in mass of egg 3.",
-    "answer": "an answer scores\n(examiner note: of 4.6 / 4.56 / 4.558 2 marks)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q04.2",
-    "image": "data/images/aqa-8461-1h-jun18-table4.png"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-04-3",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-1",
-    "tier": "H",
-    "marks": 3,
-    "type": "short",
-    "text": "A student carried out an investigation using chicken eggs. This is the method used. 1. Place 5 eggs in acid for 24 hours to dissolve the egg shell. 2. Measure and record the mass of each egg. 3. Place each egg into a separate beaker containing 200 cm3 of distilled water. 4. After 20 minutes, remove the eggs from the beakers and dry them gently with a paper towel. 5. Measure and record the mass of each egg. Table 4 shows the results. Table 4 Percentage change in mass = Explain why the masses of the eggs increased.",
-    "answer": "because) water osmosis solution in the allow from more concentrated concentration egg (cell) an area concentration allow ref allow ref solutions ignore concentration do not of concentration permeable allow semi-permeable selectively membrane\n(examiner note: an area of high water in the beaker to of low water in the egg (cell) to water potential to ‘strong’ and ‘weak’ along / across gradient accept ‘amount’ in place / permeable)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q04.3",
-    "image": "data/images/aqa-8461-1h-jun18-table4.png"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-04-4",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-1",
-    "tier": "H",
-    "marks": 3,
-    "type": "short",
-    "text": "A student carried out an investigation using chicken eggs. This is the method used. 1. Place 5 eggs in acid for 24 hours to dissolve the egg shell. 2. Measure and record the mass of each egg. 3. Place each egg into a separate beaker containing 200 cm3 of distilled water. 4. After 20 minutes, remove the eggs from the beakers and dry them gently with a paper towel. 5. Measure and record the mass of each egg. Table 4 shows the results. Table 4 Explain how the student could modify the investigation to determine the concentration of the solution inside each egg.",
-    "answer": "more) different allow any of salt / sugar concentrations beakers) more than percentage change on / using a concentration / line crosses change (in\n(examiner note: number of provided it is four)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q04.4",
-    "image": "data/images/aqa-8461-1h-jun18-table4.png"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-04-5",
+    "id": "aqa-8461-1h-jun18-04",
     "level": "gcse",
     "subject": "biology",
     "topic": "gcse-bio-1",
     "tier": "H",
-    "marks": 3,
-    "type": "short",
-    "text": "A student carried out an investigation using chicken eggs. This is the method used. 1. Place 5 eggs in acid for 24 hours to dissolve the egg shell. 2. Measure and record the mass of each egg. 3. Place each egg into a separate beaker containing 200 cm3 of distilled water. 4. After 20 minutes, remove the eggs from the beakers and dry them gently with a paper towel. 5. Measure and record the mass of each egg. Table 4 shows the results. Table 4 Chicken egg shells contain calcium. Calcium ions are moved from the shell into the cytoplasm of the egg. Table 5 shows information about the concentration of calcium ions. Table 5 Explain how calcium ions are moved from the shell into the cytoplasm of the egg.",
-    "answer": "from an area allow against to high gradient allow in do not transport using energy do not being created\n(examiner note: the concentration terms of solution accept molecules accept idea of energy)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q04.5",
-    "image": "data/images/aqa-8461-1h-jun18-table4.png",
+    "marks": 10,
+    "text": "A student carried out an investigation using chicken eggs. This is the method used. 1. Place 5 eggs in acid for 24 hours to dissolve the egg shell. 2. Measure and record the mass of each egg. 3. Place each egg into a separate beaker containing 200 cm3 of distilled water. 4. After 20 minutes, remove the eggs from the beakers and dry them gently with a paper towel. 5. Measure and record the mass of each egg. Table 4 shows the results.",
+    "parts": [
+      {
+        "label": "04.1",
+        "text": "Another student suggested that the result for egg 4 was anomalous. Do you agree with the student? Give a reason for your answer.",
+        "marks": 1,
+        "type": "short",
+        "answer": "because) the mass change egg 4) is much lower than others",
+        "guidance": "Allow because it / egg 4 has gained (over) 50% less mass than the others\nAllow it / egg 4 has gained 1.5 g and the others have all gained more than 3 g (unit required)",
+        "standalone": true
+      },
+      {
+        "label": "04.3",
+        "text": "Explain why the masses of the eggs increased.",
+        "marks": 3,
+        "type": "short",
+        "answer": "increased because) water by osmosis a dilute solution in the to a more concentrated in the egg (cell) a partially permeable membrane",
+        "guidance": "Allow from an area of high water concentration in the beaker to an area of low water concentration in the egg (cell)\nAllow ref to water potential\nAllow ref to ‘strong’ and ‘weak’ solutions\nIgnore along / across concentration gradient\nDo not accept ‘amount’ in place of concentration\nAllow semi-permeable / selectively permeable membrane",
+        "standalone": true
+      },
+      {
+        "label": "04.4",
+        "text": "Explain how the student could modify the investigation to determine the concentration of the solution inside each egg.",
+        "marks": 3,
+        "type": "short",
+        "answer": "five (or more) different concentrations of salt / sugar (in beakers) plotting percentage change mass / volume) on / using a determine the concentration the curve / line crosses zero percentage change (in / volume)",
+        "guidance": "Allow any number of concentrations provided it is more than four",
+        "standalone": true
+      },
+      {
+        "label": "04.5",
+        "text": "Chicken egg shells contain calcium. Calcium ions are moved from the shell into the cytoplasm of the egg. Table 5 shows information about the concentration of calcium ions. Explain how calcium ions are moved from the shell into the cytoplasm of the egg.",
+        "marks": 3,
+        "type": "short",
+        "answer": "are moved) from an area concentration to high concentration active transport requires using energy",
+        "guidance": "Allow against the concentration gradient\nAllow in terms of solution\nDo not accept molecules\nDo not accept idea of energy being created",
+        "images": [
+          "data/images/aqa-8461-1h-jun18-table5.png"
+        ],
+        "standalone": true
+      }
+    ],
+    "source": "AQA GCSE Biology Paper 1H June 2018 Q4",
     "images": [
-      "data/images/aqa-8461-1h-jun18-table4.png",
-      "data/images/aqa-8461-1h-jun18-table5.png"
+      "data/images/aqa-8461-1h-jun18-table4.png"
     ]
   },
   {
-    "id": "aqa-8461-1h-jun18-05-1",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-2",
-    "tier": "H",
-    "marks": 1,
-    "type": "short",
-    "text": "Plants can be infected by fungi, viruses and insects. Aphids are small insects that carry pathogens. Figure 6 shows an aphid feeding from a plant stem. Figure 6 An aphid feeds by inserting its sharp mouthpiece into the stem of a plant. Give the reason why the mouthpiece of an aphid contains a high concentration of dissolved sugars after feeding.",
-    "answer": "has pierced / phloem has been feeding",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q05.1",
-    "image": "data/images/aqa-8461-1h-jun18-figure6.png"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-05-2",
+    "id": "aqa-8461-1h-jun18-05",
     "level": "gcse",
     "subject": "biology",
     "topic": "gcse-bio-3",
     "tier": "H",
-    "marks": 5,
-    "type": "extended",
-    "text": "Plants can be infected by fungi, viruses and insects. Aphids are small insects that carry pathogens. Figure 6 shows an aphid feeding from a plant stem. Figure 6 Plants infected with aphids may show symptoms of magnesium deficiency. Magnesium deficiency symptoms include: • yellow leaves • stunted growth. Explain how a deficiency of magnesium could cause these symptoms.",
-    "answer": "due to lack of ignore ignore make chorophyll less / no light chlorophyll) lower rate of / no do not produced plant makes less / no plant converts less / allow less into protein converted so growth is wall) allow less synthesis\n(examiner note: ‘choroplasts’ magnesium is needed to allow ‘energy is by photosynthesis’ glucose / sugar into cellulose (cell energy for protein)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q05.2",
-    "image": "data/images/aqa-8461-1h-jun18-figure6.png"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-05-3",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-3",
-    "tier": "H",
-    "marks": 4,
-    "type": "short",
-    "text": "Plants can be infected by fungi, viruses and insects. Aphids are small insects that carry pathogens. Figure 6 shows an aphid feeding from a plant stem. Figure 6 A farmer thinks a potato crop is infected with potato virus Y (PVY). The farmer obtains a monoclonal antibody test kit for PVY. To make the monoclonal antibodies a scientist first isolates the PVY protein from the virus. Describe how the scientist would use the protein to produce the PVY monoclonal antibody.",
-    "answer": "/ it into a with ignore cells to make allow T (cells) ignore which makes a antibody specific to clones (the do not to produce many stem cells the antibody) allow many mitosis\n(examiner note: white blood cells or B lymphocytes tumour unqualified allow cloning of original rounds of cloning /)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q05.3",
-    "image": "data/images/aqa-8461-1h-jun18-figure6.png"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-07-1",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-2",
-    "tier": "H",
-    "marks": 3,
-    "type": "short",
-    "text": "Following updated research information and communications with parents of children with cystic fibrosis, we have decided to withdraw the question on this topic from this paper. It has been decided not to provide a replacement question as it would not be possible to determine accurately how a replacement question would have performed if it had been part of the original paper taken in 2018. The following statistics may help you to make effective use of the remainder of the paper: Mean mark (maximum mark) 06.1 0.47 (1) 06.2 0.65 (1) 06.3 2.27 (6) 06.4 1.27 (2) 06.5 0.69 (1) 06.6 1.33 (2) 06.7 0.56 (4) 06.8 0.42 (1) Question 6 7.66 (18) Table 8 shows information about some food components in cow’s milk. Table 8 How much more milk would a typical adult have to drink to get their RDA for calcium compared with the amount of milk needed to get their RDA for vitamin B-12?",
-    "answer": "an answer 559.78 marks an incorrect does not marks allow any minimum = 826.446281 (cm3) allow alternative correct B-12) allow alternative correct 266.67 (cm3) / 559.78 / 559 (cm3) allow only on values and calcium\n(examiner note: of 560 / 559.8 / / 559 (cm3) scores 3 answer for one step prevent allocation of for subsequent steps correct rounding to 3 significant figures route with rounding route with rounding correct answer based given for vitamin B-12)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q07.1",
-    "image": "data/images/aqa-8461-1h-jun18-table8.png"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-07-2",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-2",
-    "tier": "H",
-    "marks": 6,
-    "type": "extended",
-    "text": "Table 8 shows information about some food components in cow’s milk. Table 8 Volume of milk = cm3 Describe how a student could test cow’s milk to show whether it contains protein and different types of carbohydrate.",
-    "answer": "relevant facts, events given in detail to form an accurate events or processes are identified relevance is not clear. content content (allow CuSO4 and NaOH) reagent to milk will turn (from blue) to lilac if positive tests for starch (ignore solution to milk will turn (from orange / brown) reagent tests for sugars reagent to milk and boil above 60 °C) will turn (from blue) to (brick) green if positive reference to all three food tests\n(examiner note: or processes are account. and simply tests for protein iodine unqualified) to blue / black if positive / heat (allow any red / brown / orange / is required)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q07.2",
-    "image": "data/images/aqa-8461-1h-jun18-table8.png"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-07-3",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-2",
-    "tier": "H",
-    "marks": 3,
-    "type": "short",
-    "text": "Table 8 shows information about some food components in cow’s milk. Table 8 A scientist investigated the effect of bile on the breakdown of fat in a sample of milk. The scientist used an indicator that is colourless in solutions with a pH lower than 10, and pink in solutions with a pH above 10. This is the method used. 1. Add 1 drop of bile to a test tube and one drop of water to a second test tube. 2. Add the following to each test tube: • 5 cm3 of milk • 7 cm3 of sodium carbonate solution (to make the solution above pH 10) • 5 drops of the indicator • 1 cm3 of lipase. 3. Time how long it takes for the indicator in the solutions to become colourless. The results are shown in Table 9. Table 9 Explain why the indicator in both tubes became colourless.",
-    "answer": "down fat into fatty do not glycerol) contradicted lower the pH fatty acids cause the 10 (the indicator\n(examiner note: accept if ‘glycerol’ is)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q07.3",
-    "image": "data/images/aqa-8461-1h-jun18-table8.png",
+    "marks": 10,
+    "text": "Plants can be infected by fungi, viruses and insects. Aphids are small insects that carry pathogens. Figure 6 shows an aphid feeding from a plant stem.",
+    "parts": [
+      {
+        "label": "05.1",
+        "text": "An aphid feeds by inserting its sharp mouthpiece into the stem of a plant. Give the reason why the mouthpiece of an aphid contains a high concentration of dissolved sugars after feeding.",
+        "marks": 1,
+        "type": "short",
+        "answer": "(mouthpiece) has pierced / the phloem aphid) has been feeding the phloem",
+        "standalone": true
+      },
+      {
+        "label": "05.2",
+        "text": "Plants infected with aphids may show symptoms of magnesium deficiency. Magnesium deficiency symptoms include: • yellow leaves • stunted growth. Explain how a deficiency of magnesium could cause these symptoms.",
+        "marks": 5,
+        "type": "extended",
+        "answer": "leaves due to lack of chlorophyll (therefore) less / no light absorbed (by chlorophyll) (therefore) lower rate of / no photosynthesis (therefore) plant makes less / no / glucose (therefore) plant converts less / sugar / glucose into protein growth, so growth is",
+        "guidance": "Ignore ‘choroplasts’\nIgnore magnesium is needed to make chorophyll\nDo not allow ‘energy is produced by photosynthesis’\nAllow less glucose / sugar converted into cellulose (cell wall)\nAllow less energy for protein synthesis",
+        "standalone": true
+      },
+      {
+        "label": "05.3",
+        "text": "A farmer thinks a potato crop is infected with potato virus Y (PVY). The farmer obtains a monoclonal antibody test kit for PVY. To make the monoclonal antibodies a scientist first isolates the PVY protein from the virus. Describe how the scientist would use the protein to produce the PVY monoclonal antibody.",
+        "marks": 4,
+        "type": "short",
+        "answer": "the protein / it into a lymphocytes with / cancer cells to make hybridoma (cells) a hybridoma which makes monoclonal antibody specific to scientist) clones (the hybridoma) to produce many (to make the antibody)",
+        "guidance": "Ignore white blood cells\nAllow T or B lymphocytes\nIgnore tumour unqualified a\nDo not allow cloning of original stem cells\nAllow many rounds of cloning / mitosis",
+        "standalone": true
+      }
+    ],
+    "source": "AQA GCSE Biology Paper 1H June 2018 Q5",
     "images": [
-      "data/images/aqa-8461-1h-jun18-table8.png",
-      "data/images/aqa-8461-1h-jun18-table9.png"
+      "data/images/aqa-8461-1h-jun18-figure6.png"
     ]
   },
   {
-    "id": "aqa-8461-1h-jun18-07-4",
+    "id": "aqa-8461-1h-jun18-07",
     "level": "gcse",
     "subject": "biology",
     "topic": "gcse-bio-2",
     "tier": "H",
-    "marks": 1,
-    "type": "short",
-    "text": "Table 8 shows information about some food components in cow’s milk. Table 8 Give the reason why the measurement of the time taken for the indicator to become colourless might be inaccurate.",
-    "answer": "of colour change is ignore based on opinion ignore examples\n(examiner note: human error unqualified experimental error or of this)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q07.4",
-    "image": "data/images/aqa-8461-1h-jun18-table8.png"
-  },
-  {
-    "id": "aqa-8461-1h-jun18-07-5",
-    "level": "gcse",
-    "subject": "biology",
-    "topic": "gcse-bio-2",
-    "tier": "H",
-    "marks": 3,
-    "type": "short",
-    "text": "Table 8 shows information about some food components in cow’s milk. Table 8 Explain the difference in the results for the two test tubes in Table 9.",
-    "answer": "fats allow a emulsification large droplets droplets) do not chemical surface area (of can break down fat allow fatty fatty acids) more action\n(examiner note: correct description of (ie breaks fat from into smaller accept a description of breakdown acids produced by of lipase more quickly)",
-    "source": "AQA GCSE Biology Paper 1H June 2018 Q07.5",
-    "image": "data/images/aqa-8461-1h-jun18-table8.png",
+    "marks": 10,
+    "text": "Table 8 shows information about some food components in cow’s milk.",
+    "parts": [
+      {
+        "label": "07.1",
+        "text": "Following updated research information and communications with parents of children with cystic fibrosis, we have decided to withdraw the question on this topic from this paper. It has been decided not to provide a replacement question as it would not be possible to determine accurately how a replacement question would have performed if it had been part of the original paper taken in 2018. The following statistics may help you to make effective use of the remainder of the paper: Mean mark (maximum mark) 06.1 0.47 (1) 06.2 0.65 (1) 06.3 2.27 (6) 06.4 1.27 (2) 06.5 0.69 (1) 06.6 1.33 (2) 06.7 0.56 (4) 06.8 0.42 (1) Question 6 7.66 (18) Table 8 shows information about some food components in cow’s milk. How much more milk would a typical adult have to drink to get their RDA for calcium compared with the amount of milk needed to get their RDA for vitamin B-12?",
+        "marks": 3,
+        "type": "short",
+        "answer": "calcium) × 1000 = 826.446281 (cm3) vitamin B-12) × 2.4 = 266.67 (cm3) / 559.8 / 559.78 / 559 (cm3)",
+        "guidance": "An answer of 560 / 559.8 / 559.78 / 559 (cm3) scores 3 marks an incorrect answer for one step does not prevent allocation of marks for subsequent steps\nAllow any correct rounding to minimum 3 significant figures\nAllow alternative route with correct rounding\nAllow only correct answer based on values given for vitamin B-12 and calcium",
+        "images": [
+          "data/images/aqa-8461-1h-jun18-table8.png"
+        ],
+        "standalone": false
+      },
+      {
+        "label": "07.3",
+        "text": "A scientist investigated the effect of bile on the breakdown of fat in a sample of milk. The scientist used an indicator that is colourless in solutions with a pH lower than 10, and pink in solutions with a pH above 10. This is the method used. 1. Add 1 drop of bile to a test tube and one drop of water to a second test tube. 2. Add the following to each test tube: • 5 cm3 of milk • 7 cm3 of sodium carbonate solution (to make the solution above pH 10) • 5 drops of the indicator • 1 cm3 of lipase. 3. Time how long it takes for the indicator in the solutions to become colourless. The results are shown in Table 9. Explain why the indicator in both tubes became colourless.",
+        "marks": 3,
+        "type": "short",
+        "answer": "breaks down fat into fatty (and glycerol) fatty acids lower the pH when) fatty acids cause the be below 10 (the indicator colourless)",
+        "guidance": "Do not accept if ‘glycerol’ is contradicted",
+        "images": [
+          "data/images/aqa-8461-1h-jun18-table9.png"
+        ],
+        "standalone": false
+      },
+      {
+        "label": "07.4",
+        "text": "Give the reason why the measurement of the time taken for the indicator to become colourless might be inaccurate.",
+        "marks": 1,
+        "type": "short",
+        "answer": "observation of colour change is subjective / based on opinion",
+        "guidance": "Ignore human error unqualified\nIgnore experimental error or examples of this",
+        "standalone": true
+      },
+      {
+        "label": "07.5",
+        "text": "Explain the difference in the results for the two test tubes in Table 9.",
+        "marks": 3,
+        "type": "short",
+        "answer": "emulsifies fats a larger surface area (of lipase can break down fat produce fatty acids) more / effectively",
+        "guidance": "Allow a correct description of emulsification (ie breaks fat from large droplets into smaller droplets)\nDo not accept a description of chemical breakdown\nAllow fatty acids produced by action of lipase more quickly",
+        "images": [
+          "data/images/aqa-8461-1h-jun18-table9.png"
+        ],
+        "standalone": false
+      }
+    ],
+    "source": "AQA GCSE Biology Paper 1H June 2018 Q7",
     "images": [
-      "data/images/aqa-8461-1h-jun18-table8.png",
-      "data/images/aqa-8461-1h-jun18-table9.png"
+      "data/images/aqa-8461-1h-jun18-table8.png"
     ]
   }
 );

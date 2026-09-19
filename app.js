@@ -1,6 +1,21 @@
 /* ============================================================
-   Science Question Generator: app logic
-   Data comes from window.STRUCTURE, window.QUESTIONS, window.KEYWORDS
+   Science Question Generator
+
+   Data shapes this app understands
+   --------------------------------
+   A question is either a single question, or a multi-part exam question:
+
+     { id, level, subject, topic, tier, marks, type, text, answer,
+       guidance?, options?, image?, images?, table?, graph?, lines?,
+       standalone?, source }
+
+     { id, level, subject, topic, tier, marks, text, images?, source,
+       parts: [ { label, text, marks, type, answer, guidance?, options?,
+                  images?, standalone } ] }
+
+   "standalone" says whether a part still makes sense on its own, away from
+   the rest of its question. Worksheets may use single parts; exam questions
+   always use the whole question so nothing is missing.
    ============================================================ */
 
 (function () {
@@ -10,21 +25,13 @@
   const QUESTIONS = window.QUESTIONS || [];
   const KEYWORDS = window.KEYWORDS || {};
 
-  // ---------- state ----------
   const state = {
-    year: null,       // "7".."13"
-    level: null,      // ks3 | gcse | alevel
-    subject: null,    // biology | chemistry | physics | combined | science
-    tier: null,       // F | H (GCSE only)
-    topics: [],       // topic ids
-    mode: null,       // worksheet | starter | exam
-    minutes: 10,
-    count: 3,
-    result: null,     // last generated output
-    showAnswers: false
+    year: null, level: null, subject: null, tier: null,
+    topics: [], mode: null, minutes: 10, count: 3,
+    result: null, showAnswers: false
   };
 
-  const $ = (sel) => document.querySelector(sel);
+  const $ = (s) => document.querySelector(s);
   const el = (tag, cls, html) => {
     const e = document.createElement(tag);
     if (cls) e.className = cls;
@@ -39,9 +46,13 @@
     }
     return a;
   };
-  const sum = (arr, f) => arr.reduce((t, x) => t + f(x), 0);
+  const sum = (a, f) => a.reduce((t, x) => t + f(x), 0);
+  const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
-  // ---------- step 1: year ----------
+  // ============================================================
+  // Wizard
+  // ============================================================
   function renderYears() {
     const box = $("#year-chips");
     box.innerHTML = "";
@@ -49,16 +60,9 @@
       const b = el("button", "chip", y.label);
       b.type = "button";
       b.onclick = () => {
-        state.year = y.id;
-        state.level = y.level;
-        state.subject = null;
-        state.tier = null;
-        state.topics = [];
-        mark(box, b);
-        renderSubjects();
-        renderExam();
-        renderTopics();
-        refresh();
+        state.year = y.id; state.level = y.level;
+        state.subject = null; state.tier = null; state.topics = [];
+        mark(box, b); renderSubjects(); renderExam(); renderTopics(); refresh();
       };
       box.appendChild(b);
     });
@@ -70,7 +74,6 @@
     if (chosen) chosen.classList.add("selected");
   }
 
-  // ---------- step 2: subject ----------
   function renderSubjects() {
     const box = $("#subject-chips");
     box.innerHTML = "";
@@ -79,17 +82,13 @@
       const b = el("button", "chip", s.label);
       b.type = "button";
       b.onclick = () => {
-        state.subject = s.id;
-        state.topics = [];
-        mark(box, b);
-        renderTopics();
-        refresh();
+        state.subject = s.id; state.topics = [];
+        mark(box, b); renderTopics(); refresh();
       };
       box.appendChild(b);
     });
   }
 
-  // ---------- step 3: exam and tier ----------
   function renderExam() {
     const lvl = S.levels[state.level];
     $("#level-label").textContent = lvl ? lvl.label : "";
@@ -99,12 +98,7 @@
       S.tiers.forEach((t) => {
         const b = el("button", "chip", t.label);
         b.type = "button";
-        b.onclick = () => {
-          state.tier = t.id;
-          mark(box, b);
-          renderTopics();
-          refresh();
-        };
+        b.onclick = () => { state.tier = t.id; mark(box, b); renderTopics(); refresh(); };
         box.appendChild(b);
       });
     } else {
@@ -113,40 +107,18 @@
     }
   }
 
-  // ---------- step 4: topics ----------
   function topicsForSelection() {
     if (!state.level || !state.subject) return [];
+    const byYear = (a, b) => {
+      const ay = a.year === state.year ? 0 : 1, by = b.year === state.year ? 0 : 1;
+      return ay - by;
+    };
     return S.topics.filter((t) => {
       if (t.level !== state.level) return false;
-      if (state.subject === "science") return true;                // KS3 all
-      if (state.subject === "combined") return t.combined !== false; // GCSE Trilogy
+      if (state.subject === "science") return true;
+      if (state.subject === "combined") return t.combined !== false;
       return t.subject === state.subject;
-    }).sort((a, b) => {
-      // KS3: this year group's typical topics first
-      if (state.level === "ks3") {
-        const ay = a.year === state.year ? 0 : 1;
-        const by = b.year === state.year ? 0 : 1;
-        if (ay !== by) return ay - by;
-      }
-      if (state.level === "alevel") {
-        const ay = a.year === state.year ? 0 : 1;
-        const by = b.year === state.year ? 0 : 1;
-        if (ay !== by) return ay - by;
-      }
-      return 0;
-    });
-  }
-
-  function questionPool(topicIds) {
-    return QUESTIONS.filter((q) => {
-      if (q.level !== state.level) return false;
-      if (!topicIds.includes(q.topic)) return false;
-      if (state.level === "gcse") {
-        if (state.subject === "combined" && q.combined === false) return false;
-        if (state.tier && q.tier && q.tier !== "both" && q.tier !== state.tier) return false;
-      }
-      return true;
-    });
+    }).sort((a, b) => (state.level === "gcse" ? 0 : byYear(a, b)));
   }
 
   function renderTopics() {
@@ -156,8 +128,7 @@
     topics.forEach((t) => {
       const lab = el("label");
       const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.value = t.id;
+      cb.type = "checkbox"; cb.value = t.id;
       cb.checked = state.topics.includes(t.id);
       cb.onchange = () => {
         if (cb.checked) state.topics.push(t.id);
@@ -165,13 +136,13 @@
         refresh();
       };
       lab.appendChild(cb);
-      const subjTag = (state.subject === "science" || state.subject === "combined")
+      const tag = (state.subject === "science" || state.subject === "combined")
         ? `<span class="count">${cap(t.subject)}: </span>` : "";
-      lab.appendChild(el("span", null, subjTag + t.label));
-      const nQ = questionPool([t.id]).length;
+      lab.appendChild(el("span", null, tag + t.label));
+      const nItems = itemPool([t.id]).length;
       const nK = (KEYWORDS[t.id] || []).length;
-      let badge = `${nQ} Q / ${nK} kw`;
-      if (t.year && (state.level === "ks3" || state.level === "alevel")) badge = `Y${t.year} · ` + badge;
+      let badge = `${nItems} Q / ${nK} kw`;
+      if (t.year && state.level !== "gcse") badge = `Y${t.year} · ` + badge;
       lab.appendChild(el("span", "badge", badge));
       list.appendChild(lab);
     });
@@ -184,7 +155,6 @@
   };
   $("#topics-none").onclick = () => { state.topics = []; renderTopics(); refresh(); };
 
-  // ---------- step 5: mode ----------
   $("#mode-chips").querySelectorAll(".chip").forEach((b) => {
     b.onclick = () => {
       state.mode = b.dataset.mode;
@@ -200,7 +170,56 @@
     b.onclick = () => { state.count = +b.dataset.count; mark($("#count-chips"), b); refresh(); };
   });
 
-  // ---------- enable/disable steps ----------
+  // ============================================================
+  // Selecting questions
+  // ============================================================
+  function matchesSelection(q, topicIds) {
+    if (q.level !== state.level) return false;
+    if (!topicIds.includes(q.topic)) return false;
+    if (state.level === "gcse") {
+      if (state.subject === "combined" && q.combined === false) return false;
+      if (state.tier && q.tier && q.tier !== "both" && q.tier !== state.tier) return false;
+    }
+    return true;
+  }
+
+  /* Whole questions, as they appear on the paper. */
+  function questionPool(topicIds) {
+    return QUESTIONS.filter((q) => matchesSelection(q, topicIds));
+  }
+
+  /* Every usable item: a single question, or one standalone part of a
+     multi-part question. This is what a worksheet draws on. */
+  function itemPool(topicIds) {
+    const items = [];
+    QUESTIONS.forEach((q) => {
+      if (!matchesSelection(q, topicIds)) return;
+      if (!q.parts) {
+        items.push({ kind: "single", q: q, marks: q.marks });
+        return;
+      }
+      q.parts.forEach((p) => {
+        if (p.standalone) items.push({ kind: "part", q: q, part: p, marks: p.marks });
+      });
+    });
+    return items;
+  }
+
+  /* Simple text-only questions for a lesson starter: no diagrams, tables or
+     graphs, short, and worth a mark or two. */
+  function starterPool(topicIds) {
+    return itemPool(topicIds).filter((it) => {
+      const src = it.kind === "part" ? it.part : it.q;
+      if (it.marks > 2) return false;
+      if (src.images || src.image || src.table || src.graph) return false;
+      if (it.kind === "part" && (it.q.images || it.q.image)) return false;
+      const text = src.text || "";
+      if (text.length > 220) return false;
+      if (/figure|table \d|graph|diagram|shown above|below/i.test(text)) return false;
+      return true;
+    });
+  }
+
   function refresh() {
     const lvl = S.levels[state.level];
     const tierOk = !lvl || !lvl.hasTiers || state.tier;
@@ -208,26 +227,33 @@
     setActive("#step-exam", !!state.subject);
     setActive("#step-topic", !!state.subject && tierOk);
     setActive("#step-mode", state.topics.length > 0);
-
-    const ready = state.topics.length > 0 && state.mode && tierOk;
-    $("#generate").disabled = !ready;
+    $("#generate").disabled = !(state.topics.length && state.mode && tierOk);
 
     const info = $("#pool-info");
     info.className = "hint";
-    if (state.topics.length) {
-      const pool = questionPool(state.topics);
-      const marks = sum(pool, (q) => q.marks);
-      const kws = state.topics.reduce((n, t) => n + (KEYWORDS[t] || []).length, 0);
-      info.textContent = `${pool.length} questions (${marks} marks) and ${kws} keywords available.`;
-      if (state.mode === "worksheet" && marks < targetMarks()) {
+    if (!state.topics.length) { info.textContent = ""; return; }
+
+    const items = itemPool(state.topics);
+    const marks = sum(items, (i) => i.marks);
+    const kws = state.topics.reduce((n, t) => n + (KEYWORDS[t] || []).length, 0);
+    info.textContent = `${items.length} questions (${marks} marks) and ${kws} keywords available.`;
+
+    if (state.mode === "worksheet" && marks < targetMarks()) {
+      info.className = "hint warn";
+      info.textContent += ` Not enough for ${state.minutes} minutes yet.`;
+    }
+    if (state.mode === "starter") {
+      const n = starterPool(state.topics).length;
+      info.textContent = `${n} quick questions and ${kws} keywords available for a starter.`;
+      if (n < 3 && kws < 4) {
         info.className = "hint warn";
-        info.textContent += ` Not enough for ${state.minutes} minutes yet; add more to data/questions.`;
+        info.textContent += " Add more to data/questions or data/keywords.";
       }
-      if (state.mode === "starter" && kws < 4) {
-        info.className = "hint warn";
-        info.textContent += " Add keywords for this topic in data/keywords.";
-      }
-    } else info.textContent = "";
+    }
+    if (state.mode === "exam" && !questionPool(state.topics).length) {
+      info.className = "hint warn";
+      info.textContent += " No full exam questions for this selection.";
+    }
   }
   function setActive(sel, on) { $(sel).classList.toggle("active", !!on); }
 
@@ -236,9 +262,11 @@
     return Math.round(state.minutes / mpm);
   }
 
-  // ---------- generation ----------
-  $("#generate").onclick = () => { generate(); };
-  $("#btn-shuffle").onclick = () => { generate(); };
+  // ============================================================
+  // Building the output
+  // ============================================================
+  $("#generate").onclick = generate;
+  $("#btn-shuffle").onclick = generate;
   $("#btn-answers").onclick = () => {
     state.showAnswers = !state.showAnswers;
     $("#btn-answers").textContent = state.showAnswers ? "Hide answers" : "Show answers";
@@ -246,16 +274,15 @@
     if (a) a.hidden = !state.showAnswers;
   };
   $("#btn-print").onclick = () => window.print();
-  $("#btn-word").onclick = () => exportWord();
+  $("#btn-word").onclick = exportWord;
 
   function generate() {
-    const pool = shuffle(questionPool(state.topics));
-    let result;
-    if (state.mode === "worksheet") result = buildWorksheet(pool);
-    else if (state.mode === "exam") result = buildExam(pool);
-    else result = buildStarter(pool);
-    state.result = result;
-    renderPaper(result);
+    let r;
+    if (state.mode === "worksheet") r = buildWorksheet();
+    else if (state.mode === "exam") r = buildExam();
+    else r = buildStarter();
+    state.result = r;
+    renderPaper(r);
     $("#output-section").hidden = false;
     $("#output-section").scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -267,84 +294,78 @@
     const tier = state.tier ? S.tiers.find((t) => t.id === state.tier).label + " tier" : null;
     const topics = state.topics.map((id) => S.topics.find((t) => t.id === id).label);
     return {
-      year: yr.label, subject: subj.label, level: lvl.label, tier,
-      topics, topicText: topics.join("; ")
+      subtitle: `${yr.label} · ${lvl.label}${tier ? " · " + tier : ""}`,
+      subject: subj.label,
+      topicText: topicSummary(topics)
     };
   }
 
-  // Pick questions to hit a marks target. Greedy with a second pass for small fillers.
-  function pickToMarks(pool, target) {
-    const chosen = [];
-    let total = 0;
-    for (const q of pool) {
-      if (total + q.marks <= target) { chosen.push(q); total += q.marks; }
-    }
-    // second pass: try small questions we skipped
-    for (const q of pool) {
-      if (chosen.includes(q)) continue;
-      if (total + q.marks <= target) { chosen.push(q); total += q.marks; }
-    }
-    // if we are well under, allow one overshoot of up to 2 marks
-    if (total < target * 0.8) {
-      const extra = pool.find((q) => !chosen.includes(q) && q.marks <= target - total + 2);
-      if (extra) { chosen.push(extra); total += extra.marks; }
-    }
-    // order: short questions first, extended last
-    chosen.sort((a, b) => a.marks - b.marks);
-    return { questions: chosen, totalMarks: total };
+  /* A header listing thirty topics is unreadable, so summarise past four. */
+  function topicSummary(topics) {
+    if (topics.length <= 4) return topics.join("; ");
+    return topics.slice(0, 3).join("; ") + ` and ${topics.length - 3} more topics`;
   }
 
-  function buildWorksheet(pool) {
+  function buildWorksheet() {
     const target = targetMarks();
-    const picked = pickToMarks(pool, target);
+    const pool = shuffle(itemPool(state.topics));
+    const chosen = [];
+    let total = 0;
+    // fill the time, preferring a spread of question sizes
+    for (const it of pool) {
+      if (total >= target) break;
+      if (total + it.marks <= target) { chosen.push(it); total += it.marks; }
+    }
+    for (const it of pool) {
+      if (total >= target) break;
+      if (!chosen.includes(it) && total + it.marks <= target) { chosen.push(it); total += it.marks; }
+    }
+    chosen.sort((a, b) => a.marks - b.marks);
     const h = headerInfo();
     return {
       kind: "worksheet",
       title: `${h.subject}: ${state.minutes} minute worksheet`,
-      subtitle: `${h.year} · ${h.level}${h.tier ? " · " + h.tier : ""}`,
-      topicText: h.topicText,
-      minutes: state.minutes,
-      targetMarks: target,
-      questions: picked.questions,
-      totalMarks: picked.totalMarks
+      subtitle: h.subtitle, topicText: h.topicText,
+      minutes: state.minutes, targetMarks: target,
+      items: chosen, totalMarks: total
     };
   }
 
-  function buildExam(pool) {
+  function buildExam() {
+    // whole questions only, so nothing is missing from the context
+    const pool = shuffle(questionPool(state.topics));
+    const chosen = pool.slice(0, state.count)
+      .map((q) => ({ kind: "whole", q: q, marks: q.marks }))
+      .sort((a, b) => a.marks - b.marks);
     const h = headerInfo();
-    const qs = pool.slice(0, state.count).sort((a, b) => a.marks - b.marks);
     return {
       kind: "exam",
       title: `${h.subject}: exam questions`,
-      subtitle: `${h.year} · ${h.level}${h.tier ? " · " + h.tier : ""}`,
-      topicText: h.topicText,
-      questions: qs,
-      totalMarks: sum(qs, (q) => q.marks)
+      subtitle: h.subtitle, topicText: h.topicText,
+      items: chosen, totalMarks: sum(chosen, (i) => i.marks)
     };
   }
 
-  function buildStarter(pool) {
+  function buildStarter() {
     const h = headerInfo();
     let kws = [];
     state.topics.forEach((t) => { kws = kws.concat(KEYWORDS[t] || []); });
     kws = shuffle(kws);
-    const matchSet = kws.slice(0, 6);
-    const gapSet = kws.slice(6, 10).length >= 3 ? kws.slice(6, 10) : kws.slice(0, 4);
-    const quick = pool.filter((q) => q.marks <= 2 && !q.parts).slice(0, 3);
+    const quick = shuffle(starterPool(state.topics)).slice(0, 5);
     return {
       kind: "starter",
       title: `${h.subject}: starter`,
-      subtitle: `${h.year} · ${h.level}${h.tier ? " · " + h.tier : ""}`,
-      topicText: h.topicText,
-      match: $("#st-match").checked ? matchSet : [],
-      gaps: $("#st-gaps").checked ? gapSet : [],
-      quick: $("#st-quick").checked ? quick : [],
-      questions: $("#st-quick").checked ? quick : [],
+      subtitle: h.subtitle, topicText: h.topicText,
+      match: $("#st-match").checked ? kws.slice(0, 6) : [],
+      gaps: $("#st-gaps").checked ? (kws.slice(6, 10).length >= 3 ? kws.slice(6, 10) : kws.slice(0, 4)) : [],
+      items: $("#st-quick").checked ? quick : [],
       totalMarks: 0
     };
   }
 
-  // ---------- rendering ----------
+  // ============================================================
+  // Rendering
+  // ============================================================
   function renderPaper(r) {
     const paper = $("#paper");
     paper.innerHTML = "";
@@ -353,77 +374,96 @@
     paper.appendChild(el("div", "name-line", "<span>Name:</span><span>Class:</span><span>Date:</span>"));
 
     if (r.kind === "worksheet") {
-      paper.appendChild(el("div", "summary",
-        `Time: <b>${r.minutes} minutes</b> &nbsp;·&nbsp; Total marks: <b>${r.totalMarks}</b>` +
-        (r.totalMarks < r.targetMarks * 0.8 ? ` <i>(only ${r.totalMarks} marks of questions available for this selection)</i>` : "")));
+      let line = `Time: <b>${r.minutes} minutes</b> &nbsp;·&nbsp; Total marks: <b>${r.totalMarks}</b>`;
+      if (r.totalMarks < r.targetMarks * 0.8) {
+        line += ` <i>(only ${r.totalMarks} marks available for this selection)</i>`;
+      }
+      paper.appendChild(el("div", "summary", line));
     }
     if (r.kind === "exam") {
       paper.appendChild(el("div", "summary", `Total marks: <b>${r.totalMarks}</b>`));
     }
 
     if (r.kind === "starter") renderStarter(paper, r);
-    else r.questions.forEach((q, i) => paper.appendChild(renderQuestion(q, i + 1)));
+    else r.items.forEach((it, i) => paper.appendChild(renderItem(it, i + 1)));
 
-    if (!r.questions.length && r.kind !== "starter") {
-      paper.appendChild(el("p", "hint warn", "No questions match this selection yet. Add some to data/questions."));
+    if (!r.items.length && r.kind !== "starter") {
+      paper.appendChild(el("p", "hint warn", "Nothing matched this selection."));
     }
 
-    // answers
     const ans = el("div", "answers");
     ans.appendChild(el("h2", null, "Answers and mark scheme"));
     if (r.kind === "starter") renderStarterAnswers(ans, r);
-    r.questions.forEach((q, i) => {
-      const num = r.kind === "starter" ? `Q${i + 1}` : `${i + 1}`;
-      const d = el("div", "ans");
-      d.appendChild(el("span", "q-num", num + ". "));
-      d.appendChild(el("span", "ms", answerText(q)));
-      ans.appendChild(d);
-    });
+    r.items.forEach((it, i) => renderItemAnswer(ans, it, i + 1));
     ans.hidden = !state.showAnswers;
     paper.appendChild(ans);
   }
 
-  function answerText(q) {
-    if (q.parts) return q.parts.map((p) => `${p.label} ${p.answer} [${p.marks}]`).join("\n");
-    return `${q.answer} [${q.marks}]`;
-  }
-
-  function renderQuestion(q, n) {
+  /* One numbered item on the sheet. An item is a whole question, a single
+     question, or one standalone part lifted out of a bigger question. */
+  function renderItem(it, n) {
     const wrap = el("div", "question");
     const head = el("div", "q-head");
     head.appendChild(el("div", "q-num", n + "."));
     const body = el("div", "q-body");
-    if (q.text) body.appendChild(el("p", "q-text", q.text));
-    (q.images || (q.image ? [q.image] : [])).forEach((src) => {
-      const img = el("img", "q-image");
-      img.src = src; img.alt = q.imageAlt || "diagram";
-      body.appendChild(img);
-    });
-    if (q.table) body.appendChild(renderTable(q.table));
-    if (q.graph) body.appendChild(renderGraph(q.graph));
 
-    if (q.parts) {
-      q.parts.forEach((p) => {
-        const part = el("div", "part");
-        part.appendChild(el("div", "p-label", p.label));
-        const pb = el("div", "p-body");
-        pb.appendChild(el("div", "q-text", p.text));
-        if (p.image) { const im = el("img", "q-image"); im.src = p.image; pb.appendChild(im); }
-        if (p.table) pb.appendChild(renderTable(p.table));
-        if (p.graph) pb.appendChild(renderGraph(p.graph));
-        pb.appendChild(answerSpace(p));
-        pb.appendChild(el("div", "marks", `[${p.marks} mark${p.marks === 1 ? "" : "s"}]`));
-        part.appendChild(pb);
-        body.appendChild(part);
-      });
+    if (it.kind === "whole") {
+      const seen = new Set();
+      if (it.q.text) body.appendChild(el("p", "q-text", it.q.text));
+      addMedia(body, it.q, seen);
+      it.q.parts.forEach((p, i) => body.appendChild(renderPart(p, i, seen)));
+    } else if (it.kind === "part") {
+      // a part on its own: print the question's opening line first so it reads
+      if (it.q.text && it.q.text.length < 300) {
+        body.appendChild(el("p", "q-text stem", it.q.text));
+      }
+      body.appendChild(el("p", "q-text", it.part.text));
+      addMedia(body, it.part);
+      body.appendChild(answerSpace(it.part));
+      body.appendChild(marksTag(it.part.marks));
     } else {
-      body.appendChild(answerSpace(q));
-      body.appendChild(el("div", "marks", `[${q.marks} mark${q.marks === 1 ? "" : "s"}]`));
+      if (it.q.text) body.appendChild(el("p", "q-text", it.q.text));
+      addMedia(body, it.q);
+      body.appendChild(answerSpace(it.q));
+      body.appendChild(marksTag(it.q.marks));
     }
-    if (q.source) body.appendChild(el("div", "source", esc(q.source)));
+
+    if (it.q.source) body.appendChild(el("div", "source", esc(it.q.source)));
     head.appendChild(body);
     wrap.appendChild(head);
     return wrap;
+  }
+
+  function renderPart(p, i, seen) {
+    const part = el("div", "part");
+    part.appendChild(el("div", "p-label", "(" + "abcdefghij"[i] + ")"));
+    const pb = el("div", "p-body");
+    pb.appendChild(el("div", "q-text", p.text));
+    addMedia(pb, p, seen);
+    pb.appendChild(answerSpace(p));
+    pb.appendChild(marksTag(p.marks));
+    part.appendChild(pb);
+    return part;
+  }
+
+  function marksTag(m) {
+    return el("div", "marks", `[${m} mark${m === 1 ? "" : "s"}]`);
+  }
+
+  /* `seen` stops the same figure being printed again for every part that
+     refers to it, which happens a lot on multi-part exam questions. */
+  function addMedia(node, src, seen) {
+    (src.images || (src.image ? [src.image] : [])).forEach((s) => {
+      if (seen) {
+        if (seen.has(s)) return;
+        seen.add(s);
+      }
+      const img = el("img", "q-image");
+      img.src = s; img.alt = src.imageAlt || "figure";
+      node.appendChild(img);
+    });
+    if (src.table) node.appendChild(renderTable(src.table));
+    if (src.graph) node.appendChild(renderGraph(src.graph));
   }
 
   function answerSpace(q) {
@@ -433,14 +473,32 @@
       return ul;
     }
     if (q.type === "calculation") {
-      const box = el("div", "answer-box" + (q.marks >= 4 ? " tall" : ""));
-      return box;
+      return el("div", "answer-box" + (q.marks >= 4 ? " tall" : ""));
     }
-    if (q.type === "graph-plot" && q.graph) return el("div"); // graph already drawn
-    const n = q.lines !== undefined ? q.lines : Math.max(1, q.marks >= 6 ? q.marks + 4 : q.marks);
+    const n = q.lines !== undefined ? q.lines : Math.max(1, q.marks >= 6 ? q.marks + 3 : q.marks);
     const box = el("div", "answer-lines");
     for (let i = 0; i < n; i++) box.appendChild(el("div", "line"));
     return box;
+  }
+
+  function renderItemAnswer(ans, it, n) {
+    const d = el("div", "ans");
+    if (it.kind === "whole") {
+      d.appendChild(el("div", "q-num", n + "."));
+      it.q.parts.forEach((p, i) => {
+        const sub = el("div", "sub-ans");
+        sub.appendChild(el("span", "p-label", "(" + "abcdefghij"[i] + ") "));
+        sub.appendChild(el("span", "ms", p.answer));
+        if (p.guidance) sub.appendChild(el("div", "guidance", p.guidance));
+        d.appendChild(sub);
+      });
+    } else {
+      const src = it.kind === "part" ? it.part : it.q;
+      d.appendChild(el("span", "q-num", n + ". "));
+      d.appendChild(el("span", "ms", src.answer));
+      if (src.guidance) d.appendChild(el("div", "guidance", src.guidance));
+    }
+    ans.appendChild(d);
   }
 
   function renderTable(t) {
@@ -458,8 +516,6 @@
     return tbl;
   }
 
-  // Draw a graph as SVG from a spec:
-  // { xLabel, yLabel, xMax, yMax, xStep, yStep, points:[[x,y]], plot:true, line:true, width, height }
   function renderGraph(g) {
     const W = g.width || 440, H = g.height || 300;
     const m = { l: 56, r: 16, t: 14, b: 48 };
@@ -469,25 +525,21 @@
     const sx = (x) => m.l + (x / xMax) * pw;
     const sy = (y) => m.t + ph - (y / yMax) * ph;
     let s = `<svg class="graph" xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`;
-    s += `<rect x="0" y="0" width="${W}" height="${H}" fill="#fff"/>`;
-    // minor grid (5 per major)
+    s += `<rect width="${W}" height="${H}" fill="#fff"/>`;
     for (let x = 0; x <= xMax + 1e-9; x += xStep / 5) s += `<line x1="${sx(x)}" y1="${m.t}" x2="${sx(x)}" y2="${m.t + ph}" stroke="#e6e6e6" stroke-width="0.6"/>`;
     for (let y = 0; y <= yMax + 1e-9; y += yStep / 5) s += `<line x1="${m.l}" y1="${sy(y)}" x2="${m.l + pw}" y2="${sy(y)}" stroke="#e6e6e6" stroke-width="0.6"/>`;
-    // major grid and labels
     for (let x = 0; x <= xMax + 1e-9; x += xStep) {
       s += `<line x1="${sx(x)}" y1="${m.t}" x2="${sx(x)}" y2="${m.t + ph}" stroke="#bbb" stroke-width="0.9"/>`;
-      s += `<text x="${sx(x)}" y="${m.t + ph + 16}" font-size="11" text-anchor="middle" fill="#222">${fmt(x)}</text>`;
+      s += `<text x="${sx(x)}" y="${m.t + ph + 16}" font-size="11" text-anchor="middle">${fmt(x)}</text>`;
     }
     for (let y = 0; y <= yMax + 1e-9; y += yStep) {
       s += `<line x1="${m.l}" y1="${sy(y)}" x2="${m.l + pw}" y2="${sy(y)}" stroke="#bbb" stroke-width="0.9"/>`;
-      s += `<text x="${m.l - 6}" y="${sy(y) + 4}" font-size="11" text-anchor="end" fill="#222">${fmt(y)}</text>`;
+      s += `<text x="${m.l - 6}" y="${sy(y) + 4}" font-size="11" text-anchor="end">${fmt(y)}</text>`;
     }
-    // axes
     s += `<line x1="${m.l}" y1="${m.t}" x2="${m.l}" y2="${m.t + ph}" stroke="#000" stroke-width="1.4"/>`;
     s += `<line x1="${m.l}" y1="${m.t + ph}" x2="${m.l + pw}" y2="${m.t + ph}" stroke="#000" stroke-width="1.4"/>`;
-    s += `<text x="${m.l + pw / 2}" y="${H - 8}" font-size="12" text-anchor="middle" fill="#000">${esc(g.xLabel || "")}</text>`;
-    s += `<text transform="translate(14 ${m.t + ph / 2}) rotate(-90)" font-size="12" text-anchor="middle" fill="#000">${esc(g.yLabel || "")}</text>`;
-    // data
+    s += `<text x="${m.l + pw / 2}" y="${H - 8}" font-size="12" text-anchor="middle">${esc(g.xLabel || "")}</text>`;
+    s += `<text transform="translate(14 ${m.t + ph / 2}) rotate(-90)" font-size="12" text-anchor="middle">${esc(g.yLabel || "")}</text>`;
     if (g.points && g.plot !== false) {
       if (g.line) {
         const d = g.points.map((p, i) => (i ? "L" : "M") + sx(p[0]) + " " + sy(p[1])).join(" ");
@@ -504,15 +556,12 @@
     return holder.firstChild;
   }
   function niceStep(max) {
-    const raw = max / 5;
-    const p = Math.pow(10, Math.floor(Math.log10(raw)));
-    const n = raw / p;
-    const step = n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10;
-    return step * p;
+    const raw = max / 5, p = Math.pow(10, Math.floor(Math.log10(raw))), n = raw / p;
+    return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p;
   }
   function fmt(v) { return Math.round(v * 1000) / 1000; }
 
-  // ---------- starter rendering ----------
+  // ---------- starter ----------
   function renderStarter(paper, r) {
     let n = 0;
     if (r.match.length) {
@@ -533,7 +582,8 @@
       n++;
       const b = el("div", "starter-block");
       b.appendChild(el("h3", null, `${n}. Fill in the gaps`));
-      b.appendChild(el("div", "word-bank", "<b>Word bank:</b> " + shuffle(r.gaps).map((k) => esc(k.term)).join(" &nbsp;·&nbsp; ")));
+      b.appendChild(el("div", "word-bank", "<b>Word bank:</b> " +
+        shuffle(r.gaps).map((k) => esc(k.term)).join(" &nbsp;·&nbsp; ")));
       const ol = el("ol", "gaps");
       r.gaps.forEach((k) => {
         const sentence = k.sentence
@@ -544,24 +594,39 @@
       b.appendChild(ol);
       paper.appendChild(b);
     }
-    if (r.quick.length) {
+    if (r.items.length) {
       n++;
       const b = el("div", "starter-block");
       b.appendChild(el("h3", null, `${n}. Quick questions`));
-      r.quick.forEach((q, i) => b.appendChild(renderQuestion(q, i + 1)));
+      const ol = el("ol", "quick");
+      r.items.forEach((it) => {
+        const src = it.kind === "part" ? it.part : it.q;
+        const li = el("li");
+        li.appendChild(el("div", "q-text", src.text));
+        if (src.options) {
+          const ul = el("ul", "options");
+          src.options.forEach((o) => ul.appendChild(el("li", null, o)));
+          li.appendChild(ul);
+        } else {
+          const lines = el("div", "answer-lines");
+          for (let i = 0; i < Math.max(1, src.marks); i++) lines.appendChild(el("div", "line"));
+          li.appendChild(lines);
+        }
+        ol.appendChild(li);
+      });
+      b.appendChild(ol);
       paper.appendChild(b);
     }
-    if (!n) paper.appendChild(el("p", "hint warn", "Nothing to show: tick at least one starter activity, or add keywords for this topic."));
+    if (!n) paper.appendChild(el("p", "hint warn",
+      "Nothing to show: tick a starter activity, or add keywords for this topic."));
   }
 
   function renderStarterAnswers(ans, r) {
     if (r.match.length && r._matchOrder) {
       const d = el("div", "ans");
       d.appendChild(el("span", "q-num", "Match: "));
-      d.appendChild(el("span", "ms", r.match.map((k, i) => {
-        const letter = String.fromCharCode(65 + r._matchOrder.indexOf(k));
-        return `${i + 1}${letter}`;
-      }).join(", ")));
+      d.appendChild(el("span", "ms", r.match.map((k, i) =>
+        `${i + 1}${String.fromCharCode(65 + r._matchOrder.indexOf(k))}`).join(", ")));
       ans.appendChild(d);
     }
     if (r.gaps.length) {
@@ -572,7 +637,9 @@
     }
   }
 
-  // ---------- Word export (.docx via docx library) ----------
+  // ============================================================
+  // Word export
+  // ============================================================
   async function exportWord() {
     if (!window.docx) {
       alert("The Word library did not load (are you offline?). Use Print / Save as PDF instead.");
@@ -581,64 +648,68 @@
     const r = state.result;
     if (!r) return;
     const D = window.docx;
-    const P = (text, opts = {}) => new D.Paragraph({
-      children: [new D.TextRun({ text, bold: !!opts.bold, size: opts.size || 22, italics: !!opts.italic })],
-      spacing: { after: opts.after !== undefined ? opts.after : 120 },
-      alignment: opts.right ? D.AlignmentType.RIGHT : D.AlignmentType.LEFT
-    });
     const children = [];
+    const P = (text, o = {}) => new D.Paragraph({
+      children: [new D.TextRun({ text: text, bold: !!o.bold, size: o.size || 22, italics: !!o.italic })],
+      spacing: { after: o.after !== undefined ? o.after : 120 },
+      alignment: o.right ? D.AlignmentType.RIGHT : D.AlignmentType.LEFT
+    });
+
     children.push(P(r.title, { bold: true, size: 30 }));
     children.push(P(`${r.subtitle}  ·  Topics: ${r.topicText}`, { size: 18 }));
     children.push(P("Name: ____________________    Class: __________    Date: __________", { after: 240 }));
     if (r.kind === "worksheet") children.push(P(`Time: ${r.minutes} minutes    Total marks: ${r.totalMarks}`, { bold: true }));
     if (r.kind === "exam") children.push(P(`Total marks: ${r.totalMarks}`, { bold: true }));
 
-    const addImage = async (src) => {
-      try {
-        const buf = await imageToPng(src);
-        if (!buf) return;
-        children.push(new D.Paragraph({ children: [new D.ImageRun({ data: buf.data, transformation: { width: buf.w, height: buf.h }, type: "png" })] }));
-      } catch (e) { children.push(P("[image: " + src + "]", { italic: true })); }
+    const addMediaW = async (src, seen) => {
+      for (const s of (src.images || (src.image ? [src.image] : []))) {
+        if (seen) { if (seen.has(s)) continue; seen.add(s); }
+        const buf = await imageToPng(s);
+        if (buf) children.push(new D.Paragraph({ children: [new D.ImageRun({ data: buf.data, transformation: { width: buf.w, height: buf.h }, type: "png" })] }));
+      }
+      if (src.table) addTableW(src.table);
+      if (src.graph) {
+        const buf = await svgToPng(renderGraph(src.graph));
+        if (buf) children.push(new D.Paragraph({ children: [new D.ImageRun({ data: buf.data, transformation: { width: buf.w, height: buf.h }, type: "png" })] }));
+      }
     };
-    const addSvg = async (svgEl) => {
-      try {
-        const buf = await svgToPng(svgEl);
-        children.push(new D.Paragraph({ children: [new D.ImageRun({ data: buf.data, transformation: { width: buf.w, height: buf.h }, type: "png" })] }));
-      } catch (e) { children.push(P("[graph]", { italic: true })); }
-    };
-    const addTable = (t) => {
+    const addTableW = (t) => {
       const rows = [];
       if (t.headers) rows.push(new D.TableRow({ children: t.headers.map((h) => new D.TableCell({ children: [P(strip(h), { bold: true })] })) }));
       t.rows.forEach((row) => rows.push(new D.TableRow({ children: row.map((c) => new D.TableCell({ children: [P(c === null ? "" : strip(String(c)))] })) })));
-      children.push(new D.Table({ rows, width: { size: 60, type: D.WidthType.PERCENTAGE } }));
+      children.push(new D.Table({ rows: rows, width: { size: 60, type: D.WidthType.PERCENTAGE } }));
       children.push(P(""));
     };
-    const addLines = (q) => {
+    const addLinesW = (q) => {
       if (q.type === "mcq" && q.options) { q.options.forEach((o) => children.push(P("☐ " + strip(o), { after: 40 }))); return; }
       const n = q.type === "calculation" ? (q.marks >= 4 ? 6 : 4)
-        : (q.lines !== undefined ? q.lines : Math.max(1, q.marks >= 6 ? q.marks + 4 : q.marks));
+        : (q.lines !== undefined ? q.lines : Math.max(1, q.marks >= 6 ? q.marks + 3 : q.marks));
       for (let i = 0; i < n; i++) children.push(P("_".repeat(78), { after: 60 }));
     };
-    const addQuestion = async (q, n) => {
-      children.push(P(`${n}. ${strip(q.text || "")}`, { after: 80 }));
-      for (const src of (q.images || (q.image ? [q.image] : []))) await addImage(src);
-      if (q.table) addTable(q.table);
-      if (q.graph) await addSvg(renderGraph(q.graph));
-      if (q.parts) {
-        for (const p of q.parts) {
-          children.push(P(`${p.label} ${strip(p.text)}`, { after: 80 }));
-          if (p.image) await addImage(p.image);
-          if (p.table) addTable(p.table);
-          if (p.graph) await addSvg(renderGraph(p.graph));
-          addLines(p);
+
+    for (let i = 0; i < r.items.length; i++) {
+      const it = r.items[i];
+      if (it.kind === "whole") {
+        const seenW = new Set();
+        children.push(P(`${i + 1}. ${strip(it.q.text || "")}`, { after: 80 }));
+        await addMediaW(it.q, seenW);
+        for (let j = 0; j < it.q.parts.length; j++) {
+          const p = it.q.parts[j];
+          children.push(P(`(${"abcdefghij"[j]}) ${strip(p.text)}`, { after: 80 }));
+          await addMediaW(p, seenW);
+          addLinesW(p);
           children.push(P(`[${p.marks} mark${p.marks === 1 ? "" : "s"}]`, { right: true, size: 18 }));
         }
       } else {
-        addLines(q);
-        children.push(P(`[${q.marks} mark${q.marks === 1 ? "" : "s"}]`, { right: true, size: 18 }));
+        const src = it.kind === "part" ? it.part : it.q;
+        const stem = (it.kind === "part" && it.q.text && it.q.text.length < 300) ? it.q.text + " " : "";
+        children.push(P(`${i + 1}. ${strip(stem + src.text)}`, { after: 80 }));
+        await addMediaW(src);
+        addLinesW(src);
+        children.push(P(`[${src.marks} mark${src.marks === 1 ? "" : "s"}]`, { right: true, size: 18 }));
       }
-      if (q.source) children.push(P(q.source, { italic: true, size: 14, after: 200 }));
-    };
+      if (it.q.source) children.push(P(it.q.source, { italic: true, size: 14, after: 200 }));
+    }
 
     if (r.kind === "starter") {
       let n = 0;
@@ -646,10 +717,7 @@
         n++;
         children.push(P(`${n}. Match each key word to its definition`, { bold: true }));
         const defs = r._matchOrder || r.match;
-        r.match.forEach((k, i) => {
-          children.push(P(`${i + 1}. ${k.term}        ${String.fromCharCode(65 + i)}. ${defs[i].definition}`, { after: 60 }));
-        });
-        children.push(P(""));
+        r.match.forEach((k, i) => children.push(P(`${i + 1}. ${k.term}        ${String.fromCharCode(65 + i)}. ${defs[i].definition}`, { after: 60 })));
       }
       if (r.gaps.length) {
         n++;
@@ -659,29 +727,34 @@
           const s = k.sentence ? k.sentence.replace(/_{2,}/g, "______________") : `______________ : ${k.definition}`;
           children.push(P(`${i + 1}. ${s}`, { after: 60 }));
         });
-        children.push(P(""));
       }
-      if (r.quick.length) {
-        n++;
-        children.push(P(`${n}. Quick questions`, { bold: true }));
-        for (let i = 0; i < r.quick.length; i++) await addQuestion(r.quick[i], i + 1);
-      }
-    } else {
-      for (let i = 0; i < r.questions.length; i++) await addQuestion(r.questions[i], i + 1);
     }
 
-    // answers on a new page
     children.push(new D.Paragraph({ children: [new D.PageBreak()] }));
     children.push(P("Answers and mark scheme", { bold: true, size: 26 }));
     if (r.kind === "starter") {
       if (r.match.length && r._matchOrder) children.push(P("Match: " + r.match.map((k, i) => `${i + 1}${String.fromCharCode(65 + r._matchOrder.indexOf(k))}`).join(", ")));
       if (r.gaps.length) children.push(P("Gaps: " + r.gaps.map((k, i) => `${i + 1}. ${k.term}`).join("; ")));
     }
-    r.questions.forEach((q, i) => {
-      strip(answerText(q)).split("\n").forEach((line, j) => children.push(P((j === 0 ? `${i + 1}. ` : "    ") + line, { after: 40 })));
+    r.items.forEach((it, i) => {
+      if (it.kind === "whole") {
+        children.push(P(`${i + 1}.`, { bold: true, after: 40 }));
+        it.q.parts.forEach((p, j) => {
+          strip(p.answer).split("\n").forEach((line, k) =>
+            children.push(P((k === 0 ? `(${"abcdefghij"[j]}) ` : "     ") + line, { after: 30 })));
+          if (p.guidance) strip(p.guidance).split("\n").forEach((line) =>
+            children.push(P("     " + line, { italic: true, size: 16, after: 20 })));
+        });
+      } else {
+        const src = it.kind === "part" ? it.part : it.q;
+        strip(src.answer).split("\n").forEach((line, k) =>
+          children.push(P((k === 0 ? `${i + 1}. ` : "     ") + line, { after: 30 })));
+        if (src.guidance) strip(src.guidance).split("\n").forEach((line) =>
+          children.push(P("     " + line, { italic: true, size: 16, after: 20 })));
+      }
     });
 
-    const doc = new D.Document({ sections: [{ children }] });
+    const doc = new D.Document({ sections: [{ children: children }] });
     const blob = await D.Packer.toBlob(doc);
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -690,7 +763,7 @@
   }
 
   function svgToPng(svgEl) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const xml = new XMLSerializer().serializeToString(svgEl);
       const img = new Image();
       const w = +svgEl.getAttribute("width"), h = +svgEl.getAttribute("height");
@@ -700,25 +773,24 @@
         const ctx = c.getContext("2d");
         ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
         ctx.drawImage(img, 0, 0, c.width, c.height);
-        c.toBlob((b) => b.arrayBuffer().then((buf) => resolve({ data: buf, w, h })), "image/png");
+        c.toBlob((b) => b ? b.arrayBuffer().then((buf) => resolve({ data: buf, w: w, h: h })) : resolve(null), "image/png");
       };
-      img.onerror = reject;
+      img.onerror = () => resolve(null);
       img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(xml);
     });
   }
   function imageToPng(src) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.onload = () => {
-        const maxW = 450;
-        const scale = Math.min(1, maxW / img.naturalWidth);
+        const scale = Math.min(1, 450 / img.naturalWidth);
         const w = Math.round(img.naturalWidth * scale), h = Math.round(img.naturalHeight * scale);
         const c = document.createElement("canvas");
         c.width = w; c.height = h;
         c.getContext("2d").drawImage(img, 0, 0, w, h);
         try {
-          c.toBlob((b) => b ? b.arrayBuffer().then((buf) => resolve({ data: buf, w, h })) : resolve(null), "image/png");
+          c.toBlob((b) => b ? b.arrayBuffer().then((buf) => resolve({ data: buf, w: w, h: h })) : resolve(null), "image/png");
         } catch (e) { resolve(null); }
       };
       img.onerror = () => resolve(null);
@@ -726,21 +798,18 @@
     });
   }
 
-  // ---------- helpers ----------
-  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
   function strip(html) {
     const d = document.createElement("div");
-    d.innerHTML = String(html).replace(/<br\s*\/?>/gi, "\n").replace(/<sub>(.*?)<\/sub>/gi, (m, t) => subscript(t)).replace(/<sup>(.*?)<\/sup>/gi, (m, t) => superscript(t));
+    d.innerHTML = String(html)
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<sub>(.*?)<\/sub>/gi, (m, t) => t.split("").map((c) => SUB[c] || c).join(""))
+      .replace(/<sup>(.*?)<\/sup>/gi, (m, t) => t.split("").map((c) => SUP[c] || c).join(""));
     return d.textContent;
   }
-  const SUB = { "0": "₀", "1": "₁", "2": "₂", "3": "₃", "4": "₄", "5": "₅", "6": "₆", "7": "₇", "8": "₈", "9": "₉" };
-  const SUP = { "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹", "+": "⁺", "-": "⁻" };
-  function subscript(t) { return t.split("").map((c) => SUB[c] || c).join(""); }
-  function superscript(t) { return t.split("").map((c) => SUP[c] || c).join(""); }
-  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  const SUB = { 0: "₀", 1: "₁", 2: "₂", 3: "₃", 4: "₄", 5: "₅", 6: "₆", 7: "₇", 8: "₈", 9: "₉" };
+  const SUP = { 0: "⁰", 1: "¹", 2: "²", 3: "³", 4: "⁴", 5: "⁵", 6: "⁶", 7: "⁷", 8: "⁸", 9: "⁹", "+": "⁺", "-": "⁻" };
   function safeName(s) { return s.replace(/[^a-z0-9]+/gi, "_").replace(/^_|_$/g, ""); }
 
-  // ---------- go ----------
   renderYears();
   refresh();
 })();

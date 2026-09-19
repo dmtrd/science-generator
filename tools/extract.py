@@ -23,7 +23,7 @@ Each extracted part becomes one question in the bank, so the worksheet builder
 can hit a time target accurately.
 """
 
-import argparse, json, os, re
+import argparse, collections, json, os, re
 import pymupdf
 
 
@@ -42,7 +42,7 @@ NOISE_PATTERNS = [
     r"END OF QUESTIONS", r"BLANK PAGE", r"Copyright information",
     r"DO NOT WRITE ON THIS PAGE", r"ANSWER IN THE SPACES PROVIDED",
     r"Extra space", r"For Examiner.s Use", r"Question Mark TOTAL",
-    r"Tick \(?[^)]{0,4}\)? ?(one|two|three) box\.?",
+    r"Tick \(?[^)]{0,4}\)? ?(one|two|three) box(es)?\.?",
 ]
 
 
@@ -164,8 +164,8 @@ def parse_mark_scheme_positional(path):
     from wherever the header appears and then applied to every page.
     """
     doc = pymupdf.open(path)
-    bounds = find_column_bounds(doc)
-    if not bounds:
+    fallback = find_column_bounds(doc)
+    if not fallback:
         doc.close()
         return {}
 
@@ -174,9 +174,13 @@ def parse_mark_scheme_positional(path):
         words = [w for w in page.get_text("words") if w[4].strip()]
         if not words:
             continue
+        # Column positions shift between pages (the level-of-response tables
+        # have one column fewer), so read this page's own header when it has
+        # one and only fall back to the document's first header if it does not.
+        bounds = page_column_bounds(page, words) or fallback
         # question numbers sit in the leftmost column
         anchors = sorted(
-            [w for w in words if QNO_RE.match(w[4].strip()) and w[0] < bounds["answer"]],
+            [w for w in words if QNO_RE.match(w[4].strip()) and in_column(w, bounds, "question")],
             key=lambda w: w[1],
         )
         if not anchors:
@@ -208,75 +212,143 @@ def parse_mark_scheme_positional(path):
     return out
 
 
-def find_column_bounds(doc):
-    """x start of each column, taken from a real header ROW.
-
-    The words Question / Answers / Extra information / Mark / AO must sit on
-    the same line, otherwise a stray "Mark" in a paragraph of guidance would
-    throw the boundaries off.
-    """
-    wanted = {"Question": "question", "Answers": "answer", "Extra": "extra",
-              "Mark": "mark", "AO": "spec"}
-    for page in doc:
-        lines = {}
-        for w in page.get_text("words"):
-            lines.setdefault(round(w[1] / 3), []).append(w)
-        for row in lines.values():
-            hits = {}
-            for w in row:
-                token = w[4].strip()
-                if token in wanted and wanted[token] not in hits:
-                    hits[wanted[token]] = w[0]
-            if {"question", "answer", "mark"} <= set(hits):
-                bounds = {
-                    "answer": hits["answer"],
-                    "extra": hits.get("extra", hits["mark"]),
-                    "mark": hits["mark"],
-                    "spec": hits.get("spec", hits["mark"] + 30),
-                }
-                # columns must be in the expected left-to-right order
-                xs = [bounds["answer"], bounds["extra"], bounds["mark"], bounds["spec"]]
-                if xs == sorted(xs) and bounds["answer"] > 20:
-                    return bounds
-    return None
-
-
-def column_text(band, bounds, name):
-    """Words of a row band that fall inside one column, in reading order."""
-    edges = sorted(bounds.items(), key=lambda kv: kv[1])
-    names = [n for n, _ in edges]
-    xs = [x for _, x in edges]
-    if name not in names:
-        return ""
-    i = names.index(name)
-    lo = xs[i] - 4
-    hi = xs[i + 1] - 4 if i + 1 < len(xs) else 10000
-    sel = [w for w in band if lo <= w[0] < hi]
-    sel.sort(key=lambda w: (round(w[1] / 4), w[0]))
-    return " ".join(w[4] for w in sel)
-
-
 def column_map(header):
+    """Index of each column in a detected table's header row."""
     col = {}
     for i, h in enumerate(header):
-        if "question" in h and "question" not in col:
-            col["question"] = i
-        elif "answer" in h and "answer" not in col:
-            col["answer"] = i
-        elif "extra" in h and "extra" not in col:
-            col["extra"] = i
-        elif "mark" in h and "mark" not in col:
-            col["mark"] = i
-        elif ("ao" in h or "spec" in h) and "spec" not in col:
-            col["spec"] = i
+        for key, needle in (("question", "question"), ("answer", "answer"),
+                            ("extra", "extra"), ("mark", "mark")):
+            if needle in h and key not in col:
+                col[key] = i
+                break
+        else:
+            if ("ao" in h or "spec" in h) and "spec" not in col:
+                col["spec"] = i
     return col
 
 
 def pick(cells, col, name):
     i = col.get(name)
-    if i is None or i >= len(cells):
+    return cells[i] if i is not None and i < len(cells) else ""
+
+
+HEADER_LABELS = [("question", "Question"), ("answer", "Answers"),
+                 ("extra", "Extra"), ("mark", "Mark"), ("spec", "AO")]
+
+
+def in_column(w, bounds, name):
+    rng = column_range(bounds, name)
+    return bool(rng) and rng[0] <= (w[0] + w[2]) / 2 < rng[1]
+
+
+def header_spans(page, words):
+    """The x extent of each column heading on a mark scheme page.
+
+    Returns {"answer": (x0, x1), ...} or None if this page has no header row.
+    """
+    lines = {}
+    for w in words:
+        lines.setdefault(round(w[1] / 3), []).append(w)
+    for row in lines.values():
+        row = sorted(row, key=lambda w: w[0])
+        spans, tokens = {}, [w[4].strip() for w in row]
+        for i, token in enumerate(tokens):
+            for key, label in HEADER_LABELS:
+                if token == label and key not in spans:
+                    x0, x1 = row[i][0], row[i][2]
+                    # "Extra information" and "Spec. Ref." run over two words
+                    if i + 1 < len(tokens) and tokens[i + 1] in ("information", "Ref.", "/"):
+                        x1 = row[i + 1][2]
+                    spans[key] = (x0, x1)
+        if {"question", "answer", "mark"} <= set(spans):
+            if "spec" not in spans:
+                spans["spec"] = find_spec_heading(lines, row)
+            if spans.get("spec") is None:
+                spans.pop("spec", None)
+            return spans
+    return None
+
+
+def find_spec_heading(lines, header_row):
+    """Locate the "AO / Spec. Ref." heading, which AQA splits over two lines.
+
+    It sits just above or below the rest of the header row, so the nearby
+    lines are searched rather than only the header row itself.
+    """
+    y = min(w[1] for w in header_row)
+    for key in sorted(lines):
+        row = lines[key]
+        if abs(min(w[1] for w in row) - y) > 14:
+            continue
+        for w in row:
+            if w[4].strip() in ("AO", "AO1", "AO2", "AO3", "Spec.", "Spec"):
+                return (w[0], w[2])
+    return None
+
+
+def bounds_from_spans(spans, page_width):
+    """Cut positions between columns.
+
+    The headings are centred over their columns, so a heading's own x is not
+    the column edge. The edge is the middle of the gap between one heading and
+    the next.
+    """
+    order = ["question", "answer", "extra", "mark", "spec"]
+    present = [k for k in order if k in spans]
+    cuts = {}
+    for a, b in zip(present, present[1:]):
+        cuts[a + "|" + b] = (spans[a][1] + spans[b][0]) / 2
+    return {"present": present, "cuts": cuts, "width": page_width}
+
+
+def find_column_bounds(doc):
+    """Column layout taken from the first page in the document that has a header."""
+    for page in doc:
+        spans = header_spans(page, page.get_text("words"))
+        if spans:
+            return bounds_from_spans(spans, page.rect.x1)
+    return None
+
+
+def page_column_bounds(page, words):
+    """Column layout from this page's own header, if it has one."""
+    spans = header_spans(page, words)
+    return bounds_from_spans(spans, page.rect.x1) if spans else None
+
+
+def column_range(bounds, name):
+    """(left, right) x limits of one column."""
+    present = bounds["present"]
+    if name not in present:
+        return None
+    i = present.index(name)
+    lo = bounds["cuts"].get(present[i - 1] + "|" + name, 0) if i else 0
+    hi = bounds["cuts"].get(name + "|" + present[i + 1], bounds["width"]) \
+        if i + 1 < len(present) else bounds["width"]
+    return lo, hi
+
+
+def column_text(band, bounds, name):
+    """Words of a row band that fall inside one column, as readable lines.
+
+    Words are grouped into lines before being joined, otherwise a wrapped
+    answer and the marking guidance beside it interleave into nonsense.
+    """
+    rng = column_range(bounds, name)
+    if not rng:
         return ""
-    return cells[i]
+    lo, hi = rng
+    sel = [w for w in band if lo <= (w[0] + w[2]) / 2 < hi]
+    if not sel:
+        return ""
+    lines = {}
+    for w in sel:
+        lines.setdefault(round((w[1] + w[3]) / 2 / 6), []).append(w)
+    out = []
+    for key in sorted(lines):
+        row = sorted(lines[key], key=lambda w: w[0])
+        out.append(" ".join(w[4] for w in row).strip())
+    return " ".join(t for t in out if t)
 
 
 def clean_answer(a):
@@ -291,7 +363,7 @@ def clean_answer(a):
 # ===============================================================
 PART_RE = re.compile(r"\n\s*(\d)\s*(\d)\s*\n?\s*\.?\s*\n?\s*(\d)\s*\n")
 MARKS_RE = re.compile(r"\[\s*(\d+)\s*marks?\s*\]")
-TICKBOX_RE = re.compile(r"tick\s*\(?[^)\n]{0,4}\)?\s*(one|two|three)\s*box", re.I)
+TICKBOX_RE = re.compile(r"tick\s*\(?[^)\n]{0,4}\)?\s*(one|two|three)\s*box(es)?", re.I)
 
 
 def page_text_without_tables(page):
@@ -376,7 +448,7 @@ def parse_question_paper(path):
             context = (intro + " " + context).strip()
         parts.append({
             "qno": r["qno"], "text": r["text"], "marks": r["marks"],
-            "context": context, "options": r["options"],
+            "context": context, "options": r["options"], "intro": intro,
         })
     return parts
 
@@ -449,15 +521,77 @@ def extract_options(after_tick):
     return opts, "\n".join(lines[rest_at:])
 
 
+# Labels printed in the answer space of the previous part, such as
+# "Ratio = 1 :" or the column headings of a table the student fills in.
+# They sit between one part's marks tag and the next part, so without this
+# they get read as the opening of the next question.
+ANSWER_LABEL_RE = re.compile(
+    r"^\s*(?:"
+    r"[A-Z][A-Za-z0-9 ()/%°µ.,\-]{0,45}=\s*[^.?!]{0,25}"
+    r"|Name of [a-z ]{1,30}"
+    r"|(?:Explanation|Reason|Answer|Conclusion|Method|Prediction|Observation"
+    r"|Similarities|Similarity|Differences|Difference|Advantages|Advantage"
+    r"|Disadvantages|Disadvantage|Hazard|Risk|Variable|Units?)\b"
+    r")\s*(?=[A-Z0-9]|$)"
+)
+
+
+DIAGRAM_LABELS_RE = re.compile(
+    r"^\s*(?:"
+    r"(?:[A-Z][a-z]{2,10} \d+ ){2,}"          # "Stage 1 Stage 2 Stage 3"
+    r"|(?:\d+ to \d+ [a-z]+ ){1,4}"          # "0 to 6 hours 8 to 12 hours"
+    r")")
+
+
+def drop_answer_furniture(ctx):
+    """Strip answer-space labels left over from the part before."""
+    ctx = DIAGRAM_LABELS_RE.sub("", ctx)
+    for _ in range(6):
+        new = ANSWER_LABEL_RE.sub("", ctx, count=1).lstrip()
+        if new == ctx:
+            break
+        ctx = new
+    return ctx
+
+
 def drop_stray_options(ctx):
     """Remove leftover tick-box option text that leaked into a stem."""
     ctx = re.sub(r"^(Tick\s*\(?\s*\)?\s*\w+\s*box\.?\s*)", "", ctx, flags=re.I)
+    ctx = drop_answer_furniture(ctx)
     return ctx.strip()
 
 
 # ===============================================================
 # FIGURES
 # ===============================================================
+def text_stoppers(page, words):
+    """Y positions where a figure crop must stop.
+
+    A figure caption is followed by the artwork, but the next thing down the
+    page is usually the next question part. Cropping past it would put someone
+    else's question inside the image, so those lines are used as a hard floor.
+    """
+    lines = {}
+    for w in words:
+        lines.setdefault(round(w[1] / 3), []).append(w)
+    ys = []
+    for row in lines.values():
+        row.sort(key=lambda w: w[0])
+        text = " ".join(w[4] for w in row).strip()
+        if not text:
+            continue
+        y = min(w[1] for w in row)
+        # a part marker on its own, or one followed by the question it labels
+        is_part_marker = re.match(r"^\d\s*\d\s*\.\s*\d\b", text) is not None \
+            or re.fullmatch(r"\d\s*\d\s*\.?\s*\d?", text) is not None
+        is_marks_tag = MARKS_RE.search(text) is not None
+        letters = sum(c.isalpha() for c in text)
+        is_body_text = len(text) > 55 and letters > len(text) * 0.6
+        if is_part_marker or is_marks_tag or is_body_text:
+            ys.append(y)
+    return sorted(ys)
+
+
 def extract_figures(qp_path, out_dir, prefix, dpi=170):
     """Crop every 'Figure n' and 'Table n' region to a PNG.
 
@@ -492,19 +626,28 @@ def extract_figures(qp_path, out_dir, prefix, dpi=170):
         if not boxes:
             continue
 
+
+        stoppers = text_stoppers(page, words)
         caps.sort(key=lambda c: c[0].y0)
         for idx, (rect, key) in enumerate(caps):
             if key in found:
                 continue
             top = rect.y1
             bottom = caps[idx + 1][0].y0 if idx + 1 < len(caps) else page.rect.y1
-            region = [b for b in boxes if b.y0 >= top - 6 and b.y1 <= bottom + 6]
+            # Stop the crop before the next question part or any run of body
+            # text, so a figure never swallows the question printed under it.
+            for y in stoppers:
+                if top + 8 < y < bottom:
+                    bottom = y
+                    break
+            region = [b for b in boxes if b.y0 >= top - 6 and b.y1 <= bottom - 2]
             if not region:
                 continue
             clip = region[0]
             for b in region[1:]:
                 clip |= b
             clip = (clip + (-10, -10, 10, 10)) & page.rect
+            clip.y1 = min(clip.y1, bottom - 2)
             if clip.width < 50 or clip.height < 35:
                 continue
             name = f"{prefix}-{key.lower().replace(' ', '')}.png"
@@ -517,58 +660,163 @@ def extract_figures(qp_path, out_dir, prefix, dpi=170):
 # ===============================================================
 # BUILD
 # ===============================================================
+
+# ===============================================================
+# MARK SCHEME FORMATTING
+# ===============================================================
+CREDIT_WORDS = r"(allow|accept|ignore|do not accept|do not allow|reject|" \
+               r"apply list principle|max \d|credit|award|note:|or reverse argument)"
+
+
+def format_answer(rec):
+    """Turn the raw mark scheme cells into something a teacher can read.
+
+    The answers column arrives as one run of text. Each credit-worthy point is
+    put on its own line, and the "extra information" column is kept separate as
+    marking guidance instead of being glued on as one long parenthesis.
+    """
+    a = rec["answer"] or ""
+    if rec.get("levelled"):
+        return format_levelled(a, rec["marks"])
+
+    a = re.sub(r"\s+", " ", a).strip()
+    # "any two from: • x • y" -> a proper list
+    a = re.sub(r"^(any\s+\w+\s+from:?)\s*", lambda m: m.group(1).capitalize() + "\n", a, flags=re.I)
+    a = re.sub(r"\s*•\s*", "\n• ", a)
+    # "or" alternatives on their own line make the options readable
+    a = re.sub(r"\s+\bor\b\s+", "\nor ", a)
+    lines = [ln.strip() for ln in a.split("\n") if ln.strip()]
+
+    out = []
+    for ln in lines:
+        if not ln.startswith("•") and len(out) and not out[-1].endswith(":"):
+            out.append(ln)
+        else:
+            out.append(ln)
+    text = "\n".join(out).strip()
+
+    # For a plain multi-mark answer with no list, number the points
+    if rec["marks"] > 1 and "•" not in text and "\n" not in text:
+        text += f"   [{rec['marks']} marks]"
+    return text
+
+
+def format_levelled(a, marks):
+    """Level of response mark schemes: one level per line, then the content."""
+    a = re.sub(r"\s+", " ", a).strip()
+    # split the indicative content off the end
+    content = ""
+    m = re.search(r"Indicative content\s*", a, re.I)
+    if m:
+        content = a[m.end():].strip()
+        a = a[:m.start()].strip()
+
+    a = re.sub(r"\s*(Level\s*\d\s*:)", r"\n\1", a)
+    a = re.sub(r"\s*(No relevant content\.?)", r"\n\1", a, flags=re.I)
+    lines = [ln.strip() for ln in a.split("\n") if ln.strip()]
+
+    # put the mark range back on each level
+    top = marks
+    bands = {}
+    if marks == 6:
+        bands = {"3": "5-6 marks", "2": "3-4 marks", "1": "1-2 marks"}
+    elif marks == 4:
+        bands = {"2": "3-4 marks", "1": "1-2 marks"}
+    out = []
+    for ln in lines:
+        lm = re.match(r"Level\s*(\d)\s*:\s*(.*)", ln)
+        if lm and lm.group(1) in bands:
+            out.append(f"Level {lm.group(1)} ({bands[lm.group(1)]}): {lm.group(2)}")
+        else:
+            out.append(ln)
+
+    if content:
+        content = re.sub(r"\s*•\s*", "\n• ", content).strip()
+        out.append("")
+        out.append("Indicative content:")
+        out.append(content)
+    return "\n".join(out).strip()
+
+
+def split_out_guidance(answer):
+    """Move marking guidance that ended up in the answers column.
+
+    Some mark scheme layouts run the two columns together. Anything from the
+    first "allow"/"ignore"/"do not accept" onwards is guidance, not the answer.
+    """
+    m = re.search(rf"(?:^|\s)(?={CREDIT_WORDS}\b)", answer, flags=re.I)
+    if not m or m.start() < 15:
+        return answer, ""
+    return answer[:m.start()].strip(), answer[m.start():].strip()
+
+
+def format_guidance(extra):
+    """The extra information column, one instruction per line."""
+    g = re.sub(r"\s+", " ", extra or "").strip()
+    if not g:
+        return ""
+    g = re.sub(r"\s*•\s*", " ", g)
+    # "do not accept" must start a line as a whole: splitting it before
+    # "accept" would turn a prohibition into an instruction to accept.
+    g = re.sub(r"\bdo not (accept|allow|credit)\b",
+               lambda m: "\x00do\x01not\x01" + m.group(1), g, flags=re.I)
+    # start a new line each time a new marking instruction begins
+    g = re.sub(rf"\s+(?={CREDIT_WORDS}\b)", "\n", g, flags=re.I)
+    g = re.sub(r"\s*\x00", "\n", g).replace("\x01", " ")
+    lines = [ln.strip() for ln in g.split("\n") if ln.strip()]
+    seen, out = set(), []
+    for ln in lines:
+        key = ln.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(ln[0].upper() + ln[1:] if ln else ln)
+    return "\n".join(out)
+
+
+# ===============================================================
+# BUILD
+# ===============================================================
+COPYRIGHT_NOTE = re.compile(
+    r"(Figure|Table|Image)\s*\d*\s*(cannot be reproduced|has been removed|is not reproduced)[^.]*\.?",
+    re.I)
+
+
 def build(qp, ms, out, images_dir, label, prefix, tier="H", level="gcse", subject="biology"):
     scheme = parse_mark_scheme(ms)
     parts = parse_question_paper(qp)
     figures = extract_figures(qp, images_dir, prefix)
     print(f"  mark scheme rows: {len(scheme)}   paper parts: {len(parts)}   figures: {len(figures)}")
 
-    questions, skipped = [], []
+    # group the parts back under the question they belong to, so a question
+    # that only makes sense as a whole is kept as a whole
+    groups, order = {}, []
     for p in parts:
-        sm = scheme.get(p["qno"])
-        if not sm:
-            skipped.append(p["qno"] + " (no mark scheme row)")
+        if p["qno"] not in scheme:
             continue
-        topic = SPEC_TO_TOPIC.get(".".join((sm["spec"] or "").split(".")[:2]))
-        if not topic:
-            skipped.append(p["qno"] + " (no spec ref)")
-            continue
+        qid = p["qno"].split(".")[0]
+        if qid not in groups:
+            groups[qid] = []
+            order.append(qid)
+        groups[qid].append(p)
 
-        marks = p["marks"] or sm["marks"] or 1
-        stem = p["context"]
-        text = (stem + " " + p["text"]).strip() if stem else p["text"]
-        text = re.sub(r"\s{2,}", " ", text)
-
-        answer = sm["answer"]
-        if sm["extra"]:
-            answer += "\n(examiner note: " + sm["extra"] + ")"
-
-        q = {
-            "id": f"{prefix}-{p['qno'].replace('.', '-')}",
-            "level": level, "subject": subject, "topic": topic, "tier": tier,
-            "marks": marks,
-            "type": question_type(p, marks),
-            "text": text,
-            "answer": answer,
-            "source": f"{label} Q{p['qno']}",
-        }
-        if p["options"]:
-            q["options"] = p["options"]
-        imgs = figures_for(text, figures)
-        if imgs:
-            q["image"] = imgs[0]
-            if len(imgs) > 1:
-                q["images"] = imgs
-        questions.append(q)
+    questions, skipped = [], 0
+    for qid in order:
+        plist = groups[qid]
+        built = build_question(qid, plist, scheme, figures, label, prefix, tier, level, subject)
+        if built:
+            questions.append(built)
+        else:
+            skipped += len(plist)
 
     if skipped:
-        print(f"  skipped {len(skipped)}: {', '.join(skipped)}")
+        print(f"  skipped {skipped} parts with no usable topic tag")
 
     header = (
         f"// AUTO-GENERATED from {label}\n"
         f"// Source PDFs: AQA question paper and mark scheme.\n"
-        f"// Regenerate with: python3 tools/extract.py (see tools/README)\n"
-        f"// Worth spot-checking a few by eye; the parser is good but not perfect.\n\n"
+        f"// Regenerate with: PYTHONPATH=tools python3 tools/build_all.py <folder>\n"
+        f"// Hand edits here are lost on the next run; put corrections in a file of your own.\n\n"
         "window.QUESTIONS = window.QUESTIONS || [];\n"
         "window.QUESTIONS.push(\n"
     )
@@ -577,8 +825,140 @@ def build(qp, ms, out, images_dir, label, prefix, tier="H", level="gcse", subjec
     os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
     with open(out, "w", encoding="utf-8") as f:
         f.write(header + body + "\n);\n")
-    print(f"  wrote {len(questions)} questions -> {out}")
+    nparts = sum(len(q.get("parts", [])) or 1 for q in questions)
+    print(f"  wrote {len(questions)} questions ({nparts} parts) -> {out}")
     return questions
+
+
+def build_question(qid, plist, scheme, figures, label, prefix, tier, level, subject):
+    """One entry per original exam question, with its parts kept together."""
+    specs = [scheme[p["qno"]].get("spec") for p in plist]
+    topic = topic_from_specs(specs)
+    if not topic:
+        return None
+
+    shared = shared_stem(plist)
+    built_parts = []
+    for p in plist:
+        sm = scheme[p["qno"]]
+        marks = p["marks"] or sm["marks"] or 1
+        text = clean_stem(strip_prefix(p["context"], shared) + " " + p["text"])
+        answer, stray = split_out_guidance(format_answer(sm))
+        entry = {
+            "label": p["qno"],
+            "text": text,
+            "marks": marks,
+            "type": question_type(p, marks),
+            "answer": answer,
+        }
+        guidance = format_guidance((sm["extra"] + " " + stray).strip())
+        if guidance:
+            entry["guidance"] = guidance
+        if p["options"]:
+            entry["options"] = p["options"]
+        imgs = figures_for(text, figures)
+        if imgs:
+            entry["images"] = imgs
+        built_parts.append(entry)
+
+    # Anything that would print as unanswerable is dropped rather than shipped.
+    built_parts = [e for e in built_parts if part_is_usable(e, shared, figures)]
+    if not built_parts:
+        return None
+    total = sum(e["marks"] for e in built_parts)
+
+    # A part can be used on its own only if it does not depend on a figure or
+    # table that the rest of the question also relies on.
+    fig_use = collections.Counter()
+    for e in built_parts:
+        for img in e.get("images", []):
+            fig_use[img] += 1
+    shared_imgs = figures_for(shared, figures)
+    for e in built_parts:
+        own = e.get("images", [])
+        depends_on_shared = any(i in shared_imgs for i in own)
+        shares_with_siblings = any(fig_use[i] > 1 for i in own)
+        e["standalone"] = not (depends_on_shared or shares_with_siblings)
+
+    q = {
+        "id": f"{prefix}-{qid}",
+        "level": level, "subject": subject, "topic": topic, "tier": tier,
+        "marks": total,
+        "text": clean_stem(shared),
+        "parts": built_parts,
+        "source": f"{label} Q{int(qid)}",
+    }
+    simgs = figures_for(q["text"], figures)
+    if simgs:
+        q["images"] = simgs
+    return q
+
+
+def part_is_usable(entry, shared, figures):
+    """Would this part make sense on a printed worksheet?"""
+    answer = entry["answer"].strip()
+    if not answer:
+        return False                      # no mark scheme to go with it
+    if re.match(rf"{CREDIT_WORDS}\b", answer, re.I):
+        # the answer column was lost and only the guidance survived
+        return False
+    if "Indicative content" in answer and not answer.startswith("Level "):
+        # a level of response scheme whose level descriptors did not come
+        # through cleanly, so the marking bands would be unreadable
+        return False
+    text = entry["text"]
+    if not text.strip() or text[0].islower():
+        return False                      # lost the start of its stem
+    # it refers to a figure or table that could not be extracted
+    referenced = set(re.findall(r"(?:Figure|Table)\s*\d+", text))
+    available = set()
+    for key, path in figures.items():
+        if path in (entry.get("images") or []):
+            available.add(key)
+    for key in figures:
+        if key in shared:
+            available.add(key)
+    if referenced - available:
+        return False
+    return True
+
+
+def shared_stem(plist):
+    """The text that introduces the whole question.
+
+    This is the paper's own wording between the question number and its first
+    part, so it is the stem every part depends on.
+    """
+    if len(plist) < 2:
+        return ""
+    intro = (plist[0].get("intro") or "").strip()
+    return intro if len(intro) > 20 else ""
+
+
+def strip_prefix(text, prefix):
+    if prefix and text.startswith(prefix):
+        return text[len(prefix):].strip()
+    return text
+
+
+def clean_stem(t):
+    """Final tidy of a question stem."""
+    t = re.sub(r"\s+", " ", t or "").strip()
+    t = COPYRIGHT_NOTE.sub("", t)
+    # "Figure 3 Figure 3" -> "Figure 3", and the same for tables
+    t = re.sub(r"\b(Figure|Table)\s*(\d+)(\s+\1\s*\2\b)+", r"\1 \2", t)
+    # A caption printed above the artwork ("... the equipment. Figure 3 Describe
+    # two ...") adds nothing once the figure itself is shown, so drop it.
+    t = re.sub(r"(?<=[.!?])\s+(Figure|Table)\s*\d+\s+(?=[A-Z])", " ", t)
+    t = re.sub(r"\s+(Figure|Table)\s*\d+\s*$", "", t)
+    # a caption immediately followed by a stray number: "Figure 9 0 to 6 hours"
+    t = re.sub(r"\b(Figure|Table)\s*(\d+)\s+(?=\d+\s+to\s+\d)", r"\1 \2: ", t)
+    # "Table 6 is repeated below." adds nothing once the table is printed
+    t = re.sub(r"\b(Figure|Table)\s*\d+\s*is repeated below\.?", "", t, flags=re.I)
+    t = re.sub(r"\s{2,}", " ", t).strip(" ,;:")
+    if t and not t.endswith((".", "?", "!", ":")):
+        t += "."
+    return t
 
 
 def question_type(p, marks):
@@ -592,13 +972,24 @@ def question_type(p, marks):
 
 
 def figures_for(text, figures):
-    """All Figure/Table images this question refers to, in order of mention."""
+    """All Figure/Table images this text refers to, in order of mention."""
     out = []
-    for m in re.finditer(r"(Figure|Table)\s*(\d+)", text):
+    for m in re.finditer(r"(Figure|Table)\s*(\d+)", text or ""):
         key = f"{m.group(1)} {m.group(2)}"
         if key in figures and figures[key] not in out:
             out.append(figures[key])
     return out
+
+
+def topic_from_specs(specs):
+    counts = {}
+    for s in specs:
+        if not s:
+            continue
+        topic = SPEC_TO_TOPIC.get(".".join(s.split(".")[:2]))
+        if topic:
+            counts[topic] = counts.get(topic, 0) + 1
+    return max(counts, key=counts.get) if counts else None
 
 
 if __name__ == "__main__":

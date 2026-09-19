@@ -153,6 +153,10 @@ button.primary:disabled { background: #a8b3c2; cursor: not-allowed; }
 .question .q-num { font-weight: bold; min-width: 22px; }
 .question .q-body { flex: 1; }
 .question .q-text { margin: 0 0 6px; }
+.question .q-text.stem { color: #333; }
+.starter-block ol.quick { padding-left: 20px; }
+.starter-block ol.quick li { margin: 0 0 12px; }
+.starter-block ol.quick .answer-lines .line { height: 20px; }
 .question .marks { text-align: right; font-size: 0.9rem; color: #333; margin-top: 2px; }
 .question .part { margin: 8px 0 8px 0; display: flex; gap: 8px; }
 .question .part .p-label { min-width: 26px; }
@@ -183,7 +187,14 @@ table.data th, table.data td { border: 1px solid #555; padding: 4px 10px; text-a
 /* answers */
 .answers { page-break-before: always; margin-top: 30px; border-top: 2px solid #333; padding-top: 12px; }
 .answers h2 { font-size: 1.1rem; margin: 0 0 10px; }
-.answers .ans { margin: 0 0 12px; font-size: 0.95rem; }
+.answers .ans { margin: 0 0 14px; font-size: 0.95rem; }
+.answers .sub-ans { margin: 4px 0 8px 0; }
+.answers .sub-ans .p-label { font-weight: bold; }
+.answers .ms { white-space: pre-line; }
+.answers .guidance {
+  white-space: pre-line; font-size: 0.82rem; color: #5b6474;
+  border-left: 2px solid #d8dde6; padding-left: 8px; margin: 4px 0 0 8px;
+}
 .answers .ans .q-num { font-weight: bold; }
 .answers .ans .ms { white-space: pre-line; }
 .paper .answers[hidden] { display: none; }
