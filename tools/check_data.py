@@ -46,13 +46,29 @@ def flat(entries):
     return out
 
 
+def load_subtopics():
+    """{subtopic id: topic id} from data/subtopics.js."""
+    path = os.path.join(ROOT, "data", "subtopics.js")
+    if not os.path.exists(path):
+        return {}
+    script = ("global.window={};require(%s);"
+              "process.stdout.write(JSON.stringify(window.SUBTOPICS||[]));" % json.dumps(path))
+    out = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=60)
+    if out.returncode:
+        return {}
+    return {s["id"]: s["topic"] for s in json.loads(out.stdout)}
+
+
 def main():
+    subtopics = load_subtopics()
     entries = load("data/questions/*.js")
     if not entries:
         print("No question files found.")
         return 1
     items = flat(entries)
-    print(f"{len(entries)} questions, {len(items)} answerable parts\n")
+    tagged = sum(1 for _, q, p in items if p.get("subtopic") or q.get("subtopic"))
+    print(f"{len(entries)} questions, {len(items)} answerable parts, "
+          f"{tagged} tagged to a lesson, {len(subtopics)} sub-topics defined\n")
 
     problems = {}
 
@@ -117,6 +133,17 @@ def main():
 
         if "Indicative content" in answer and not answer.lstrip().startswith("Level "):
             flag("garbled level of response scheme", fname, qid, answer[:50])
+
+        # a sub-topic must exist and belong to the question's own topic
+        sub = p.get("subtopic") or (None if p.get("topic") else q.get("subtopic"))
+        if sub and subtopics:
+            if sub not in subtopics:
+                flag("unknown sub-topic", fname, qid, sub)
+            else:
+                owner = p.get("topic") or q.get("topic")
+                if subtopics[sub] != owner:
+                    flag("sub-topic in the wrong topic", fname, qid,
+                         f"{sub} is in {subtopics[sub]}, not {owner}")
 
     # a standalone part must not depend on a figure shared with its siblings
     for fname, q in entries:

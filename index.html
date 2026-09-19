@@ -35,7 +35,7 @@
     </div>
 
     <div class="step" id="step-topic">
-      <h2><span class="num">4</span> Topic <small>(choose one or more)</small></h2>
+      <h2><span class="num">4</span> Topic <small>(tick the arrow to pick single lessons)</small></h2>
       <div class="topic-actions">
         <button type="button" class="link" id="topics-all">Select all</button>
         <button type="button" class="link" id="topics-none">Clear</button>
@@ -112,6 +112,7 @@
 <!-- DATA: structure, keywords, questions.
      To add a new data file, add a <script> line for it here. -->
 <script src="data/structure.js"></script>
+<script src="data/subtopics.js"></script>
 <script src="data/keywords/ks3.js"></script>
 <script src="data/questions/ks3-biology.js"></script>
 <script src="data/questions/ks3-chemistry.js"></script>
@@ -136,6 +137,9 @@
 <script src="data/questions/aqa-8461-2h-nov20.js"></script>
 <script src="data/questions/aqa-8461-2h-nov21.js"></script>
 <!-- PAPERS:END -->
+
+<!-- Model answers, kept separate so re-extracting papers never wipes them -->
+<script src="data/model-answers.js"></script>
 
 <!-- APP -->
 <script src="app.js"></script>

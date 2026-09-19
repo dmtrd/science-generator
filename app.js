@@ -24,10 +24,31 @@
   const S = window.STRUCTURE;
   const QUESTIONS = window.QUESTIONS || [];
   const KEYWORDS = window.KEYWORDS || {};
+  const MODEL_ANSWERS = window.MODEL_ANSWERS || {};
+  const SUBTOPICS = window.SUBTOPICS || [];
+
+  /* Model answers live in their own file, keyed by question id (and part
+     label for a multi-part question), so that re-extracting a past paper
+     never overwrites them. They are attached here at start-up. */
+  function attachModelAnswers() {
+    QUESTIONS.forEach((q) => {
+      if (q.parts) {
+        q.parts.forEach((p) => {
+          const m = MODEL_ANSWERS[q.id + "|" + p.label];
+          if (m) p.modelAnswer = m;
+        });
+      } else if (MODEL_ANSWERS[q.id]) {
+        q.modelAnswer = MODEL_ANSWERS[q.id];
+      }
+    });
+  }
 
   const state = {
     year: null, level: null, subject: null, tier: null,
-    topics: [], mode: null, minutes: 10, count: 3,
+    topics: [],        // topic ids that are ticked
+    subtopics: {},     // topic id -> array of ticked sub-topic ids
+    expanded: {},      // topic id -> is its sub-topic list open
+    mode: null, minutes: 10, count: 3,
     result: null, showAnswers: false
   };
 
@@ -107,6 +128,40 @@
     }
   }
 
+  function subtopicsFor(topicId) {
+    return SUBTOPICS.filter((s) => s.topic === topicId);
+  }
+
+  /* Keywords for the ticked topics, narrowed to the ticked lessons so a
+     starter never asks about vocabulary the class has not met yet. */
+  function keywordsFor(topicIds) {
+    let out = [];
+    topicIds.forEach((id) => {
+      const all = KEYWORDS[id] || [];
+      const picked = state.subtopics[id] || [];
+      const subs = subtopicsFor(id);
+      out = out.concat(
+        (subs.length && picked.length && picked.length < subs.length)
+          ? all.filter((k) => k.subtopic && picked.includes(k.subtopic))
+          : all
+      );
+    });
+    return out;
+  }
+
+  /* A part may sit in a different sub-topic from its parent question, so a
+     part is matched on its own sub-topic where it has one. */
+  function partMatches(q, part) {
+    // a part may sit in a different topic from the question it came from
+    const topic = part.topic || q.topic;
+    if (!state.topics.includes(topic)) return false;
+    const chosen = state.subtopics[topic];
+    if (!chosen || !chosen.length || !subtopicsFor(topic).length) return true;
+    // only inherit the question's sub-topic when the part sits in the same topic
+    const sub = part.subtopic || (part.topic ? null : q.subtopic);
+    return !!sub && chosen.includes(sub);
+  }
+
   function topicsForSelection() {
     if (!state.level || !state.subject) return [];
     const byYear = (a, b) => {
@@ -125,35 +180,111 @@
     const list = $("#topic-list");
     list.innerHTML = "";
     const topics = topicsForSelection();
+
     topics.forEach((t) => {
-      const lab = el("label");
+      const subs = subtopicsFor(t.id);
+      const row = el("div", "topic-row");
+
+      const lab = el("label", "topic-main");
       const cb = document.createElement("input");
-      cb.type = "checkbox"; cb.value = t.id;
-      cb.checked = state.topics.includes(t.id);
+      cb.type = "checkbox"; cb.checked = state.topics.includes(t.id);
       cb.onchange = () => {
-        if (cb.checked) state.topics.push(t.id);
-        else state.topics = state.topics.filter((x) => x !== t.id);
-        refresh();
+        if (cb.checked) {
+          if (!state.topics.includes(t.id)) state.topics.push(t.id);
+          state.subtopics[t.id] = subs.map((s) => s.id);   // whole topic
+          state.expanded[t.id] = false;
+        } else {
+          state.topics = state.topics.filter((x) => x !== t.id);
+          delete state.subtopics[t.id];
+        }
+        renderTopics(); refresh();
       };
       lab.appendChild(cb);
+
       const tag = (state.subject === "science" || state.subject === "combined")
         ? `<span class="count">${cap(t.subject)}: </span>` : "";
-      lab.appendChild(el("span", null, tag + t.label));
-      const nItems = itemPool([t.id]).length;
+      lab.appendChild(el("span", "topic-name", tag + t.label));
+
+      if (subs.length) {
+        const toggle = el("button", "sub-toggle", state.expanded[t.id] ? "▾" : "▸");
+        toggle.type = "button";
+        toggle.title = "Show lessons in this topic";
+        toggle.onclick = (e) => {
+          e.preventDefault();
+          state.expanded[t.id] = !state.expanded[t.id];
+          renderTopics();
+        };
+        lab.insertBefore(toggle, lab.firstChild);
+      } else {
+        lab.insertBefore(el("span", "sub-toggle spacer", ""), lab.firstChild);
+      }
+
+      const nItems = itemPoolFor(t).length;
       const nK = (KEYWORDS[t.id] || []).length;
       let badge = `${nItems} Q / ${nK} kw`;
       if (t.year && state.level !== "gcse") badge = `Y${t.year} · ` + badge;
       lab.appendChild(el("span", "badge", badge));
-      list.appendChild(lab);
+      row.appendChild(lab);
+
+      if (subs.length && state.expanded[t.id]) {
+        const box = el("div", "sub-list");
+        subs.forEach((sub) => {
+          const sl = el("label");
+          const scb = document.createElement("input");
+          scb.type = "checkbox";
+          scb.checked = (state.subtopics[t.id] || []).includes(sub.id);
+          scb.onchange = () => {
+            const cur = state.subtopics[t.id] || [];
+            state.subtopics[t.id] = scb.checked
+              ? cur.concat([sub.id])
+              : cur.filter((x) => x !== sub.id);
+            const any = state.subtopics[t.id].length > 0;
+            if (any && !state.topics.includes(t.id)) state.topics.push(t.id);
+            if (!any) state.topics = state.topics.filter((x) => x !== t.id);
+            renderTopics(); refresh();
+          };
+          sl.appendChild(scb);
+          const num = /^(chem-|phys-)?\d+\./.test(sub.id)
+            ? sub.id.replace(/^(chem-|phys-)/, "") + " " : "";
+          sl.appendChild(el("span", null, num + sub.label));
+          sl.appendChild(el("span", "badge", countFor(t, sub.id) + " Q"));
+          box.appendChild(sl);
+        });
+        row.appendChild(box);
+      }
+      list.appendChild(row);
     });
+
     if (!topics.length) list.appendChild(el("p", "hint", "Choose a year group and subject first."));
+  }
+
+  /* Counts shown beside a topic ignore whatever is currently ticked, so the
+     numbers do not change as boxes are clicked. */
+  function itemPoolFor(t) {
+    const saved = state.subtopics[t.id];
+    delete state.subtopics[t.id];
+    const n = itemPool([t.id]);
+    if (saved) state.subtopics[t.id] = saved;
+    return n;
+  }
+
+  function countFor(t, subId) {
+    const saved = state.subtopics[t.id];
+    state.subtopics[t.id] = [subId];
+    const n = itemPool([t.id]).length;
+    if (saved) state.subtopics[t.id] = saved; else delete state.subtopics[t.id];
+    return n;
   }
 
   $("#topics-all").onclick = () => {
     state.topics = topicsForSelection().map((t) => t.id);
+    state.topics.forEach((id) => { state.subtopics[id] = subtopicsFor(id).map((s) => s.id); });
     renderTopics(); refresh();
   };
-  $("#topics-none").onclick = () => { state.topics = []; renderTopics(); refresh(); };
+  $("#topics-none").onclick = () => {
+    state.topics = []; state.subtopics = {}; state.expanded = {};
+    renderTopics(); refresh();
+  };
 
   $("#mode-chips").querySelectorAll(".chip").forEach((b) => {
     b.onclick = () => {
@@ -176,6 +307,12 @@
   function matchesSelection(q, topicIds) {
     if (q.level !== state.level) return false;
     if (!topicIds.includes(q.topic)) return false;
+    // If some sub-topics of this topic are ticked, only those count. This is
+    // what keeps a starter to material a class has actually been taught.
+    const chosen = state.subtopics[q.topic];
+    if (chosen && chosen.length && subtopicsFor(q.topic).length) {
+      if (!q.subtopic || !chosen.includes(q.subtopic)) return false;
+    }
     if (state.level === "gcse") {
       if (state.subject === "combined" && q.combined === false) return false;
       if (state.tier && q.tier && q.tier !== "both" && q.tier !== state.tier) return false;
@@ -199,7 +336,9 @@
         return;
       }
       q.parts.forEach((p) => {
-        if (p.standalone) items.push({ kind: "part", q: q, part: p, marks: p.marks });
+        if (p.standalone && partMatches(q, p)) {
+          items.push({ kind: "part", q: q, part: p, marks: p.marks });
+        }
       });
     });
     return items;
@@ -235,7 +374,7 @@
 
     const items = itemPool(state.topics);
     const marks = sum(items, (i) => i.marks);
-    const kws = state.topics.reduce((n, t) => n + (KEYWORDS[t] || []).length, 0);
+    const kws = keywordsFor(state.topics).length;
     info.textContent = `${items.length} questions (${marks} marks) and ${kws} keywords available.`;
 
     if (state.mode === "worksheet" && marks < targetMarks()) {
@@ -292,11 +431,21 @@
     const subj = S.subjects[state.level].find((s) => s.id === state.subject);
     const lvl = S.levels[state.level];
     const tier = state.tier ? S.tiers.find((t) => t.id === state.tier).label + " tier" : null;
-    const topics = state.topics.map((id) => S.topics.find((t) => t.id === id).label);
+    const labels = state.topics.map((id) => {
+      const topic = S.topics.find((t) => t.id === id);
+      const all = subtopicsFor(id);
+      const picked = state.subtopics[id] || [];
+      // name the lessons when only part of a topic is selected
+      if (all.length && picked.length && picked.length < all.length) {
+        const names = all.filter((s) => picked.includes(s.id)).map((s) => s.label);
+        return topic.label + " (" + names.join(", ") + ")";
+      }
+      return topic.label;
+    });
     return {
       subtitle: `${yr.label} · ${lvl.label}${tier ? " · " + tier : ""}`,
       subject: subj.label,
-      topicText: topicSummary(topics)
+      topicText: topicSummary(labels)
     };
   }
 
@@ -335,7 +484,7 @@
     // whole questions only, so nothing is missing from the context
     const pool = shuffle(questionPool(state.topics));
     const chosen = pool.slice(0, state.count)
-      .map((q) => ({ kind: "whole", q: q, marks: q.marks }))
+      .map((q) => ({ kind: q.parts ? "whole" : "single", q: q, marks: q.marks }))
       .sort((a, b) => a.marks - b.marks);
     const h = headerInfo();
     return {
@@ -348,9 +497,7 @@
 
   function buildStarter() {
     const h = headerInfo();
-    let kws = [];
-    state.topics.forEach((t) => { kws = kws.concat(KEYWORDS[t] || []); });
-    kws = shuffle(kws);
+    const kws = shuffle(keywordsFor(state.topics));
     const quick = shuffle(starterPool(state.topics)).slice(0, 5);
     return {
       kind: "starter",
@@ -407,7 +554,7 @@
     head.appendChild(el("div", "q-num", n + "."));
     const body = el("div", "q-body");
 
-    if (it.kind === "whole") {
+    if (it.kind === "whole" && it.q.parts) {
       const seen = new Set();
       if (it.q.text) body.appendChild(el("p", "q-text", it.q.text));
       addMedia(body, it.q, seen);
@@ -483,22 +630,61 @@
 
   function renderItemAnswer(ans, it, n) {
     const d = el("div", "ans");
-    if (it.kind === "whole") {
+    if (it.kind === "whole" && it.q.parts) {
       d.appendChild(el("div", "q-num", n + "."));
       it.q.parts.forEach((p, i) => {
         const sub = el("div", "sub-ans");
         sub.appendChild(el("span", "p-label", "(" + "abcdefghij"[i] + ") "));
-        sub.appendChild(el("span", "ms", p.answer));
-        if (p.guidance) sub.appendChild(el("div", "guidance", p.guidance));
+        renderMarkScheme(sub, p);
         d.appendChild(sub);
       });
     } else {
       const src = it.kind === "part" ? it.part : it.q;
       d.appendChild(el("span", "q-num", n + ". "));
-      d.appendChild(el("span", "ms", src.answer));
-      if (src.guidance) d.appendChild(el("div", "guidance", src.guidance));
+      renderMarkScheme(d, src);
     }
     ans.appendChild(d);
+  }
+
+  /* The mark scheme as AQA lays it out: lead-in, bullet points with their
+     detail indented under them, sub-headings, level bands, then the marking
+     guidance and a model answer where there is one. */
+  function renderMarkScheme(node, src) {
+    const blocks = src.answerBlocks;
+    if (!blocks || !blocks.length) {
+      node.appendChild(el("span", "ms", src.answer || ""));
+    } else {
+      let list = null, sublist = null;
+      const closeLists = () => { list = null; sublist = null; };
+      blocks.forEach((b) => {
+        if (b.type === "point") {
+          if (!list) { list = el("ul", "ms-points"); node.appendChild(list); sublist = null; }
+          if (b.level) {
+            if (!sublist) {
+              sublist = el("ul", "ms-sub");
+              (list.lastElementChild || list).appendChild(sublist);
+            }
+            sublist.appendChild(el("li", null, b.text));
+          } else {
+            sublist = null;
+            list.appendChild(el("li", null, b.text));
+          }
+          return;
+        }
+        closeLists();
+        if (b.type === "lead") node.appendChild(el("div", "ms-lead", b.text));
+        else if (b.type === "heading") node.appendChild(el("div", "ms-heading", b.text));
+        else if (b.type === "band") node.appendChild(el("div", "ms-band", b.text));
+        else node.appendChild(el("div", "ms-note", b.text));
+      });
+    }
+    if (src.modelAnswer) {
+      const box = el("div", "model-answer");
+      box.appendChild(el("div", "model-label", "Sample full-mark answer"));
+      box.appendChild(el("div", "model-text", src.modelAnswer));
+      node.appendChild(box);
+    }
+    if (src.guidance) node.appendChild(el("div", "guidance", src.guidance));
   }
 
   function renderTable(t) {
@@ -689,7 +875,7 @@
 
     for (let i = 0; i < r.items.length; i++) {
       const it = r.items[i];
-      if (it.kind === "whole") {
+      if (it.kind === "whole" && it.q.parts) {
         const seenW = new Set();
         children.push(P(`${i + 1}. ${strip(it.q.text || "")}`, { after: 80 }));
         await addMediaW(it.q, seenW);
@@ -736,21 +922,39 @@
       if (r.match.length && r._matchOrder) children.push(P("Match: " + r.match.map((k, i) => `${i + 1}${String.fromCharCode(65 + r._matchOrder.indexOf(k))}`).join(", ")));
       if (r.gaps.length) children.push(P("Gaps: " + r.gaps.map((k, i) => `${i + 1}. ${k.term}`).join("; ")));
     }
-    r.items.forEach((it, i) => {
-      if (it.kind === "whole") {
-        children.push(P(`${i + 1}.`, { bold: true, after: 40 }));
-        it.q.parts.forEach((p, j) => {
-          strip(p.answer).split("\n").forEach((line, k) =>
-            children.push(P((k === 0 ? `(${"abcdefghij"[j]}) ` : "     ") + line, { after: 30 })));
-          if (p.guidance) strip(p.guidance).split("\n").forEach((line) =>
-            children.push(P("     " + line, { italic: true, size: 16, after: 20 })));
-        });
+    const addMarkScheme = (src, prefix) => {
+      const blocks = src.answerBlocks;
+      if (!blocks || !blocks.length) {
+        strip(src.answer || "").split("\n").forEach((line, k) =>
+          children.push(P((k === 0 ? prefix : "     ") + line, { after: 30 })));
       } else {
-        const src = it.kind === "part" ? it.part : it.q;
-        strip(src.answer).split("\n").forEach((line, k) =>
-          children.push(P((k === 0 ? `${i + 1}. ` : "     ") + line, { after: 30 })));
-        if (src.guidance) strip(src.guidance).split("\n").forEach((line) =>
+        let first = true;
+        blocks.forEach((b) => {
+          const head = first ? prefix : "     ";
+          first = false;
+          const text = strip(b.text);
+          if (b.type === "point") children.push(P(head + (b.level ? "      \u25E6 " : "   \u2022 ") + text, { after: 25 }));
+          else if (b.type === "heading") children.push(P(head + text, { bold: true, after: 30 }));
+          else if (b.type === "note") children.push(P(head + text, { italic: true, size: 18, after: 25 }));
+          else children.push(P(head + text, { after: 30 }));
+        });
+      }
+      if (src.modelAnswer) {
+        children.push(P("     Sample full-mark answer:", { bold: true, size: 18, after: 20 }));
+        children.push(P("     " + strip(src.modelAnswer), { size: 20, after: 40 }));
+      }
+      if (src.guidance) {
+        strip(src.guidance).split("\n").forEach((line) =>
           children.push(P("     " + line, { italic: true, size: 16, after: 20 })));
+      }
+    };
+
+    r.items.forEach((it, i) => {
+      if (it.kind === "whole" && it.q.parts) {
+        children.push(P(`${i + 1}.`, { bold: true, after: 40 }));
+        it.q.parts.forEach((p, j) => addMarkScheme(p, `(${"abcdefghij"[j]}) `));
+      } else {
+        addMarkScheme(it.kind === "part" ? it.part : it.q, `${i + 1}. `);
       }
     });
 
@@ -810,6 +1014,7 @@
   const SUP = { 0: "⁰", 1: "¹", 2: "²", 3: "³", 4: "⁴", 5: "⁵", 6: "⁶", 7: "⁷", 8: "⁸", 9: "⁹", "+": "⁺", "-": "⁻" };
   function safeName(s) { return s.replace(/[^a-z0-9]+/gi, "_").replace(/^_|_$/g, ""); }
 
+  attachModelAnswers();
   renderYears();
   refresh();
 })();

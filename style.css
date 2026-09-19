@@ -96,12 +96,26 @@ button.link {
   max-height: 260px; overflow-y: auto;
   border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px;
 }
+.topic-list { max-height: 320px; }
+.topic-row { border-bottom: 1px dashed #eef0f4; }
+.topic-row:last-child { border-bottom: none; }
 .topic-list label {
   display: flex; align-items: center; gap: 8px;
   padding: 5px 2px; font-size: 0.9rem; cursor: pointer;
-  border-bottom: 1px dashed #eef0f4;
 }
-.topic-list label:last-child { border-bottom: none; }
+.topic-main .topic-name { flex: 1; }
+.sub-toggle {
+  border: none; background: none; cursor: pointer; color: var(--muted);
+  font-size: 0.8rem; width: 16px; padding: 0; line-height: 1;
+}
+.sub-toggle.spacer { cursor: default; }
+.sub-toggle:hover { color: var(--accent); }
+.sub-list {
+  margin: 0 0 6px 28px; padding-left: 10px;
+  border-left: 2px solid var(--accent-soft);
+}
+.sub-list label { font-size: 0.84rem; padding: 3px 2px; color: #3a4252; }
+.sub-list .badge { font-size: 0.68rem; }
 .topic-list .badge {
   margin-left: auto; font-size: 0.72rem; color: var(--muted);
   background: var(--bg); border-radius: 4px; padding: 1px 6px; white-space: nowrap;
@@ -196,6 +210,32 @@ table.data th, table.data td { border: 1px solid #555; padding: 4px 10px; text-a
   border-left: 2px solid #d8dde6; padding-left: 8px; margin: 4px 0 0 8px;
 }
 .answers .ans .q-num { font-weight: bold; }
+
+/* mark scheme outline */
+.ms-lead { margin: 2px 0; }
+.ms-heading {
+  font-weight: bold; margin: 8px 0 2px;
+  font-size: 0.9rem; letter-spacing: 0.01em;
+}
+.ms-band { margin: 3px 0; padding-left: 10px; border-left: 3px solid var(--accent-soft); }
+.ms-note { font-style: italic; color: #444; margin: 4px 0; font-size: 0.9rem; }
+ul.ms-points { margin: 3px 0 6px; padding-left: 20px; }
+ul.ms-points > li { margin: 2px 0; }
+ul.ms-sub { margin: 2px 0; padding-left: 18px; list-style-type: circle; }
+ul.ms-sub > li { margin: 1px 0; color: #40485a; }
+
+/* sample full-mark answer */
+.model-answer {
+  margin: 8px 0 4px; padding: 8px 10px;
+  background: var(--accent-soft); border-radius: 6px;
+  page-break-inside: avoid;
+}
+.model-label {
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--accent); font-weight: bold; margin-bottom: 3px;
+}
+.model-text { font-size: 0.92rem; white-space: pre-line; }
+.model-text b { color: #0d4a3d; }
 .answers .ans .ms { white-space: pre-line; }
 .paper .answers[hidden] { display: none; }
 

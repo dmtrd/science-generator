@@ -35,7 +35,7 @@ SPEC_TO_TOPIC = {
 }
 
 NOISE_PATTERNS = [
-    r"Do not write outside the box", r"IB/M/ ?\S*\d+/\d+/\d+\w*",
+    r"Do not write outside the box", r"IB/[A-Z]{1,2}/ ?\S*\d+/\d+/\d+\w*",
     r"\*[a-zA-Z0-9]*\d+[a-zA-Z0-9]*\*",
     r"Turn over for (the )?next question", r"for (the )?next question", r"Question \d+ continues on the next page",
     r"Turn over [►▶>]*",
@@ -111,10 +111,13 @@ def parse_mark_scheme(path):
 
             current = None
             for row in rows[1:]:
-                cells = [(c or "").replace("\n", " ").strip() for c in row]
+                # The newlines in a cell carry the bullet structure, so they
+                # are kept rather than flattened into spaces.
+                cells = [(c or "").strip() for c in row]
                 if not cells:
                     continue
-                qcell = cells[col["question"]] if col.get("question") is not None else ""
+                qcell = (cells[col["question"]] if col.get("question") is not None else "")
+                qcell = qcell.replace("\n", " ").strip()
                 if re.fullmatch(r"\d{2}\.\d", qcell):
                     current = qcell
                 elif current is None:
@@ -122,10 +125,10 @@ def parse_mark_scheme(path):
                 # a row with an empty question cell continues the previous question
                 rec = out.setdefault(current, {"answer": "", "extra": "", "marks": None,
                                                "spec": None, "levelled": False})
-                rec["answer"] = (rec["answer"] + " " + pick(cells, col, "answer")).strip()
-                rec["extra"] = (rec["extra"] + " " + pick(cells, col, "extra")).strip()
+                rec["answer"] = (rec["answer"] + "\n" + pick(cells, col, "answer")).strip()
+                rec["extra"] = (rec["extra"] + "\n" + pick(cells, col, "extra")).strip()
 
-                mark_cell = pick(cells, col, "mark")
+                mark_cell = pick(cells, col, "mark").replace("\n", " ")
                 rng = re.search(r"(\d)\s*[-–—]\s*(\d)", mark_cell)
                 if rng:
                     rec["levelled"] = True
@@ -135,7 +138,7 @@ def parse_mark_scheme(path):
                     if m and not rec["marks"]:
                         rec["marks"] = int(m.group(1))
 
-                sm = re.search(r"(\d\.\d(?:\.\d+)*)", pick(cells, col, "spec"))
+                sm = re.search(r"(\d\.\d(?:\.\d+)*)", pick(cells, col, "spec").replace("\n", " "))
                 if sm and not rec["spec"]:
                     rec["spec"] = sm.group(1)
     doc.close()
@@ -192,10 +195,10 @@ def parse_mark_scheme_positional(path):
             band = [w for w in words if w[1] >= top and w[3] <= bottom + 4]
             rec = out.setdefault(qno, {"answer": "", "extra": "", "marks": None,
                                        "spec": None, "levelled": False})
-            rec["answer"] = (rec["answer"] + " " + column_text(band, bounds, "answer")).strip()
-            rec["extra"] = (rec["extra"] + " " + column_text(band, bounds, "extra")).strip()
+            rec["answer"] = (rec["answer"] + "\n" + column_text(band, bounds, "answer")).strip()
+            rec["extra"] = (rec["extra"] + "\n" + column_text(band, bounds, "extra")).strip()
 
-            mark_text = column_text(band, bounds, "mark")
+            mark_text = column_text(band, bounds, "mark").replace("\n", " ")
             rng = re.search(r"(\d)\s*[-–—‒]\s*(\d)", mark_text)
             if rng:
                 rec["levelled"] = True
@@ -205,7 +208,7 @@ def parse_mark_scheme_positional(path):
                 if m and not rec["marks"]:
                     rec["marks"] = int(m.group(1))
 
-            sm = re.search(r"(\d\.\d(?:\.\d+)*)", column_text(band, bounds, "spec"))
+            sm = re.search(r"(\d\.\d(?:\.\d+)*)", column_text(band, bounds, "spec").replace("\n", " "))
             if sm and not rec["spec"]:
                 rec["spec"] = sm.group(1)
     doc.close()
@@ -348,14 +351,14 @@ def column_text(band, bounds, name):
     for key in sorted(lines):
         row = sorted(lines[key], key=lambda w: w[0])
         out.append(" ".join(w[4] for w in row).strip())
-    return " ".join(t for t in out if t)
+    return "\n".join(t for t in out if t)
 
 
 def clean_answer(a):
-    a = re.sub(r"\s{2,}", " ", a or "").strip()
-    a = re.sub(r"^\s*[•·]\s*", "", a)
-    a = a.replace(" • ", "\n• ")
-    return a.strip()
+    """Tidy spacing without losing the line breaks that carry the bullets."""
+    a = (a or "").replace("\r", "\n")
+    lines = [re.sub(r"[ \t]{2,}", " ", ln).strip() for ln in a.split("\n")]
+    return "\n".join(ln for ln in lines if ln).strip()
 
 
 # ===============================================================
@@ -668,86 +671,178 @@ CREDIT_WORDS = r"(allow|accept|ignore|do not accept|do not allow|reject|" \
                r"apply list principle|max \d|credit|award|note:|or reverse argument)"
 
 
-def format_answer(rec):
-    """Turn the raw mark scheme cells into something a teacher can read.
+# A line ending on one of these has been wrapped by the column, not finished,
+# so the next line belongs to the same credit point.
+CONTINUES_RE = re.compile(
+    r"(?:\b(?:a|an|the|of|in|on|at|to|for|from|with|by|or|and|as|is|are|was|were|"
+    r"than|that|which|when|into|onto|between|because|so|but|its|their|this|these|"
+    r"more|less|not|no|any|all|each|per|about|over|under|up|down)\b|[/,(&+×-])\s*$",
+    re.I)
 
-    The answers column arrives as one run of text. Each credit-worthy point is
-    put on its own line, and the "extra information" column is kept separate as
-    marking guidance instead of being glued on as one long parenthesis.
+SUB_BULLET_RE = re.compile(r"^(?:o|○|◦|-)\s+(?=\S)")
+TOP_BULLET_RE = re.compile(r"^[•·\u2022]\s*")
+LEAD_IN_RE = re.compile(r"^(any\s+\w+(?:\s+pairs?)?\s+from|any\s+\w+\s+of|"
+                        r"marking\s+instructions?|level\s+of\s+response)\s*:?\s*$", re.I)
+HEADING_RE = re.compile(r"^[A-Z][A-Za-z ]{2,28}(effects?|content|points?|answers?)\s*$")
+LEVEL_NOTE_RE = re.compile(r"^(for level \d|to gain|max \d|students? (may|might))", re.I)
+
+
+def parse_points(text):
+    """Turn a mark scheme cell into structured blocks.
+
+    AQA uses a real outline: bullets for credit-worthy points, "o" for the
+    detail under a point, plain lines as sub-headings, and a lone "or" for an
+    alternative wording of the point above. Flattening that into one paragraph
+    is what made the mark schemes hard to read, so the outline is kept.
+
+    Returns a list of {"type": lead|point|heading|note, "level": 0|1, "text": ...}
     """
-    a = rec["answer"] or ""
-    if rec.get("levelled"):
-        return format_levelled(a, rec["marks"])
+    blocks = []
+    pending_or = False
+    # When the scheme uses bullets, an unbulleted line is that bullet wrapping
+    # over. When it uses none, each line is a credit point in its own right.
+    has_bullets = bool(re.search(r"^\s*[•·\u2022]", text or "", re.M))
+    for raw in (text or "").split("\n"):
+        line = raw.strip()
+        if not line:
+            continue
 
-    a = re.sub(r"\s+", " ", a).strip()
-    # "any two from: • x • y" -> a proper list
-    a = re.sub(r"^(any\s+\w+\s+from:?)\s*", lambda m: m.group(1).capitalize() + "\n", a, flags=re.I)
-    a = re.sub(r"\s*•\s*", "\n• ", a)
-    # "or" alternatives on their own line make the options readable
-    a = re.sub(r"\s+\bor\b\s+", "\nor ", a)
-    lines = [ln.strip() for ln in a.split("\n") if ln.strip()]
+        if line.lower() in ("or", "or:"):
+            pending_or = True
+            continue
 
+        sub = bool(SUB_BULLET_RE.match(line))
+        top = bool(TOP_BULLET_RE.match(line))
+        line = SUB_BULLET_RE.sub("", line) if sub else TOP_BULLET_RE.sub("", line)
+        line = line.strip()
+        if not line:
+            continue
+
+        if pending_or and blocks and blocks[-1]["type"] == "point":
+            blocks[-1]["text"] += " or " + line
+            pending_or = False
+            continue
+        pending_or = False
+
+        if not (sub or top):
+            if LEAD_IN_RE.match(line):
+                blocks.append({"type": "lead", "text": line.rstrip(":") + ":"})
+                continue
+            if LEVEL_NOTE_RE.match(line):
+                blocks.append({"type": "note", "text": line})
+                continue
+            if HEADING_RE.match(line) and len(line) < 32:
+                blocks.append({"type": "heading", "text": line})
+                continue
+            # a plain lowercase line continues whatever came before it
+            if has_bullets and blocks and blocks[-1]["type"] in ("point", "note") \
+                    and line[0].islower():
+                blocks[-1]["text"] += " " + line
+                continue
+            if blocks and blocks[-1]["type"] == "note" and line[0].islower():
+                blocks[-1]["text"] += " " + line
+                continue
+            # a line the column cut mid-phrase carries on into this one
+            if blocks and blocks[-1]["type"] == "point" \
+                    and CONTINUES_RE.search(blocks[-1]["text"]):
+                blocks[-1]["text"] += " " + line
+                continue
+            blocks.append({"type": "point", "level": 0, "text": line})
+            continue
+
+        blocks.append({"type": "point", "level": 1 if sub else 0, "text": line})
+
+    blocks = join_calculation_lines(blocks)
+    for b in blocks:
+        if "text" in b:
+            b["text"] = re.sub(r"\s{2,}", " ", b["text"]).strip()
+    return [b for b in blocks if b.get("text")]
+
+
+NUMERIC_LINE_RE = re.compile(r"^[\d\s.,()×x*/+=–—-]+$")
+
+
+def join_calculation_lines(blocks):
+    """Put a calculation back on one line.
+
+    AQA prints working as a fraction, which comes out of the PDF as a column of
+    fragments like "6.5 - 4.5", "4", "0.5". On their own they are meaningless,
+    so consecutive numeric fragments are joined back together.
+    """
     out = []
-    for ln in lines:
-        if not ln.startswith("•") and len(out) and not out[-1].endswith(":"):
-            out.append(ln)
-        else:
-            out.append(ln)
-    text = "\n".join(out).strip()
+    for b in blocks:
+        if (out and b["type"] == "point" and out[-1]["type"] == "point"
+                and b.get("level") == out[-1].get("level")
+                and NUMERIC_LINE_RE.fullmatch(b["text"])
+                and NUMERIC_LINE_RE.fullmatch(out[-1]["text"])):
+            out[-1]["text"] += "  " + b["text"]
+            continue
+        out.append(b)
+    return out
 
-    # For a plain multi-mark answer with no list, number the points
-    if rec["marks"] > 1 and "•" not in text and "\n" not in text:
-        text += f"   [{rec['marks']} marks]"
-    return text
+
+def blocks_to_text(blocks):
+    """Plain text version of the blocks, for the Word export and for checking."""
+    out = []
+    for b in blocks:
+        if b["type"] == "point":
+            out.append(("    - " if b.get("level") else "  - ") + b["text"])
+        else:
+            out.append(b["text"])
+    return "\n".join(out)
+
+
+def format_answer(rec):
+    """Structured blocks for the mark scheme, plus a plain text fallback."""
+    if rec.get("levelled"):
+        return format_levelled(rec["answer"], rec["marks"])
+    blocks = parse_points(rec["answer"])
+    return blocks
 
 
 def format_levelled(a, marks):
-    """Level of response mark schemes: one level per line, then the content."""
-    a = re.sub(r"\s+", " ", a).strip()
-    # split the indicative content off the end
-    content = ""
-    m = re.search(r"Indicative content\s*", a, re.I)
-    if m:
-        content = a[m.end():].strip()
-        a = a[:m.start()].strip()
+    """Level of response schemes: the bands, then the indicative content."""
+    lines = [ln.strip() for ln in (a or "").split("\n") if ln.strip()]
+    bands = {6: {"3": "5-6 marks", "2": "3-4 marks", "1": "1-2 marks"},
+             4: {"2": "3-4 marks", "1": "1-2 marks"}}.get(marks, {})
 
-    a = re.sub(r"\s*(Level\s*\d\s*:)", r"\n\1", a)
-    a = re.sub(r"\s*(No relevant content\.?)", r"\n\1", a, flags=re.I)
-    lines = [ln.strip() for ln in a.split("\n") if ln.strip()]
+    blocks, content_from = [], None
+    for i, ln in enumerate(lines):
+        if re.match(r"indicative content", ln, re.I):
+            content_from = i + 1
+            break
+        lm = re.match(r"Level\s*(\d)\s*:?\s*(.*)", ln)
+        if lm:
+            band = bands.get(lm.group(1))
+            label = f"Level {lm.group(1)}" + (f" ({band})" if band else "")
+            blocks.append({"type": "band", "text": f"{label}: {lm.group(2)}".strip()})
+        elif re.match(r"no relevant content", ln, re.I):
+            blocks.append({"type": "band", "text": "Level 0 (0 marks): No relevant content."})
+        elif blocks and blocks[-1]["type"] == "band" and ln[0].islower():
+            blocks[-1]["text"] += " " + ln
+        elif ln:
+            blocks.append({"type": "note", "text": ln})
 
-    # put the mark range back on each level
-    top = marks
-    bands = {}
-    if marks == 6:
-        bands = {"3": "5-6 marks", "2": "3-4 marks", "1": "1-2 marks"}
-    elif marks == 4:
-        bands = {"2": "3-4 marks", "1": "1-2 marks"}
-    out = []
-    for ln in lines:
-        lm = re.match(r"Level\s*(\d)\s*:\s*(.*)", ln)
-        if lm and lm.group(1) in bands:
-            out.append(f"Level {lm.group(1)} ({bands[lm.group(1)]}): {lm.group(2)}")
-        else:
-            out.append(ln)
-
-    if content:
-        content = re.sub(r"\s*•\s*", "\n• ", content).strip()
-        out.append("")
-        out.append("Indicative content:")
-        out.append(content)
-    return "\n".join(out).strip()
+    if content_from is not None:
+        blocks.append({"type": "heading", "text": "Indicative content"})
+        blocks += parse_points("\n".join(lines[content_from:]))
+    return blocks
 
 
-def split_out_guidance(answer):
+def split_out_guidance(blocks):
     """Move marking guidance that ended up in the answers column.
 
-    Some mark scheme layouts run the two columns together. Anything from the
-    first "allow"/"ignore"/"do not accept" onwards is guidance, not the answer.
+    Some mark scheme layouts run the two columns together, so a whole block may
+    turn out to be an instruction to the examiner rather than an answer point.
     """
-    m = re.search(rf"(?:^|\s)(?={CREDIT_WORDS}\b)", answer, flags=re.I)
-    if not m or m.start() < 15:
-        return answer, ""
-    return answer[:m.start()].strip(), answer[m.start():].strip()
+    kept, moved = [], []
+    for b in blocks:
+        if b["type"] in ("point", "note") and \
+                re.match(rf"{CREDIT_WORDS}\b", b["text"], re.I):
+            moved.append(b["text"])
+        else:
+            kept.append(b)
+    return kept, "\n".join(moved)
 
 
 def format_guidance(extra):
@@ -843,15 +938,30 @@ def build_question(qid, plist, scheme, figures, label, prefix, tier, level, subj
         sm = scheme[p["qno"]]
         marks = p["marks"] or sm["marks"] or 1
         text = clean_stem(strip_prefix(p["context"], shared) + " " + p["text"])
-        answer, stray = split_out_guidance(format_answer(sm))
+        blocks = format_answer(sm)
+        blocks, stray = split_out_guidance(blocks)
         entry = {
             "label": p["qno"],
             "text": text,
             "marks": marks,
             "type": question_type(p, marks),
-            "answer": answer,
+            "answer": blocks_to_text(blocks),
+            "answerBlocks": blocks,
         }
-        guidance = format_guidance((sm["extra"] + " " + stray).strip())
+        # AQA prints a full specification reference on every mark scheme row
+        # (for example 4.2.3.1). The first three parts of it are the sub-topic,
+        # which is what a teacher plans lessons around.
+        if sm.get("spec"):
+            entry["spec"] = sm["spec"]
+            bits = sm["spec"].split(".")
+            if len(bits) >= 3:
+                entry["subtopic"] = ".".join(bits[:3])
+            # AQA questions often cross topics, so a part carries its own topic
+            # rather than inheriting the one most of the question sits in.
+            own = SPEC_TO_TOPIC.get(".".join(bits[:2]))
+            if own and own != topic:
+                entry["topic"] = own
+        guidance = format_guidance((sm["extra"] + "\n" + stray).strip())
         if guidance:
             entry["guidance"] = guidance
         if p["options"]:
@@ -880,6 +990,7 @@ def build_question(qid, plist, scheme, figures, label, prefix, tier, level, subj
         shares_with_siblings = any(fig_use[i] > 1 for i in own)
         e["standalone"] = not (depends_on_shared or shares_with_siblings)
 
+    subtopics = [e["subtopic"] for e in built_parts if e.get("subtopic")]
     q = {
         "id": f"{prefix}-{qid}",
         "level": level, "subject": subject, "topic": topic, "tier": tier,
@@ -888,6 +999,10 @@ def build_question(qid, plist, scheme, figures, label, prefix, tier, level, subj
         "parts": built_parts,
         "source": f"{label} Q{int(qid)}",
     }
+    if subtopics:
+        # the question as a whole is tagged with the sub-topic most of its
+        # parts belong to, for filtering whole exam questions
+        q["subtopic"] = collections.Counter(subtopics).most_common(1)[0][0]
     simgs = figures_for(q["text"], figures)
     if simgs:
         q["images"] = simgs
@@ -896,15 +1011,16 @@ def build_question(qid, plist, scheme, figures, label, prefix, tier, level, subj
 
 def part_is_usable(entry, shared, figures):
     """Would this part make sense on a printed worksheet?"""
-    answer = entry["answer"].strip()
-    if not answer:
+    blocks = entry.get("answerBlocks") or []
+    if not blocks or not entry["answer"].strip():
         return False                      # no mark scheme to go with it
-    if re.match(rf"{CREDIT_WORDS}\b", answer, re.I):
-        # the answer column was lost and only the guidance survived
+    kinds = [b["type"] for b in blocks]
+    if "point" not in kinds and "band" not in kinds:
+        # only headings or examiner notes survived, so there is no answer
         return False
-    if "Indicative content" in answer and not answer.startswith("Level "):
-        # a level of response scheme whose level descriptors did not come
-        # through cleanly, so the marking bands would be unreadable
+    if any(b["type"] == "heading" and b["text"] == "Indicative content" for b in blocks) \
+            and "band" not in kinds:
+        # a level of response scheme whose bands did not come through cleanly
         return False
     text = entry["text"]
     if not text.strip() or text[0].islower():
